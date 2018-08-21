@@ -36,7 +36,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set rate during the crowdsale
    * @param _rate rate used to calculate tokens per wei
    */
-  function setRate(uint256 _rate) onlyOwner public {
+  function setRate(uint256 _rate) public onlyOwner {
     require(_rate > 0);
 
     rate = _rate;
@@ -46,7 +46,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set pre-sale rate during the crowdsale
    * @param _preSaleRate rate used to calculate tokens per wei in pre-sale
    */
-  function setPreSaleRate(uint256 _preSaleRate) onlyOwner public {
+  function setPreSaleRate(uint256 _preSaleRate) public onlyOwner {
     require(_preSaleRate > 0);
 
     preSaleRate = _preSaleRate;
@@ -56,7 +56,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set the closing time for the crowdsale
    * @param _closingTime timestamp for the close
    */
-  function setClosingTime(uint256 _closingTime) onlyOwner public {
+  function setClosingTime(uint256 _closingTime) public onlyOwner {
     require(_closingTime > openingTime);
 
     closingTime = _closingTime;
@@ -66,7 +66,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set the minimum contribution. This will change from pre-sale to public.
    * @param _minContribution amount of min contribution
    */
-  function setMinContribution(uint256 _minContribution) onlyOwner public {
+  function setMinContribution(uint256 _minContribution) public onlyOwner {
     require(_minContribution > 0);
 
     minContribution = _minContribution;
@@ -75,7 +75,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   /**
    * @dev Owner can trigger public sale (moves from pre-sale to public)
    */
-  function publicSale() onlyOwner public {
+  function publicSale() public onlyOwner {
     require(inPreSale);
 
     inPreSale = false;

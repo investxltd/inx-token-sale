@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import './WhitelistedMintableToken.sol';
-import 'openzeppelin-solidity/contracts/token/ERC20/StandardBurnableToken.sol';
+import "./WhitelistedMintableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/StandardBurnableToken.sol";
 
 /**
  * @title INXToken ERC20 token for use with the Investx Platform
@@ -33,7 +33,7 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
   /**
    * @dev Owner turn on "general" account-to-account transfers (once and only once)
    */
-  function enableTransfers() onlyOwner public {
+  function enableTransfers() public onlyOwner {
     require(!transfersEnabled, "Transfers already enabled");
 
     transfersEnabled = true;
@@ -53,7 +53,7 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
    * @dev Owner can set the investx platform address once built
    * @param _investxPlatform address of the investx platform (where you send your tokens for investments)
    */
-  function setInvestxPlatform(address _investxPlatform) onlyOwner public {
+  function setInvestxPlatform(address _investxPlatform) public onlyOwner {
     require(_investxPlatform != address(0));
 
     investxPlatform = _investxPlatform;

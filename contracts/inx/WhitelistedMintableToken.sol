@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import 'openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
-import 'openzeppelin-solidity/contracts/access/Whitelist.sol';
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/access/Whitelist.sol";
 
 /**
  * @title Whitelisted Mintable token - allow whitelisted to mint
@@ -18,7 +18,7 @@ contract WhitelistedMintableToken is StandardToken, Whitelist {
    * @param _amount The amount of tokens to mint.
    * @return A boolean that indicates if the operation was successful.
    */
-  function mint(address _to, uint256 _amount) onlyIfWhitelisted(msg.sender) public returns (bool) {
+  function mint(address _to, uint256 _amount) public onlyIfWhitelisted(msg.sender) returns (bool) {
     totalSupply_ = totalSupply_.add(_amount);
     balances[_to] = balances[_to].add(_amount);
     emit Mint(_to, _amount);
