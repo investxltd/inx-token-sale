@@ -22,9 +22,9 @@ npm run test
 * Code coverage performed by [solidity-coverage](https://github.com/sc-forks/solidity-coverage)
 
 * To run code coverage `npm run coverage` - this will produce the following:
- * HTML output in `/coverage`
- * JSON output in `/.coverage.json`
- * Terminal output
+  * HTML output in `/coverage`
+  * JSON output in `/.coverage.json`
+  * Terminal output
  
 ### Code Linting
  
