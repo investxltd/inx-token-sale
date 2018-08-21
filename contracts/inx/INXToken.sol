@@ -3,6 +3,7 @@ pragma solidity ^0.4.24;
 import "./WhitelistedMintableToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardBurnableToken.sol";
 
+
 /**
  * @title INXToken ERC20 token for use with the Investx Platform
  */
@@ -20,7 +21,7 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
 
   // FIXME arbitrarily set - will be 24 months
   // founders have a token lock-up that stops transfers (to non-investx addresses) upto this timestamp
-  uint256 public founderTokensLockedUntil = now.add(1 minutes).add(8 days);
+  uint256 public founderTokensLockedUntil = block.timestamp.add(1 minutes).add(8 days);
 
   // address that the investx platform will use to receive INX tokens for investment
   address public investxPlatform;
@@ -68,7 +69,10 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
     // transfers will be disabled during the crowdfunding phase - unless on the whitelist
     require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
 
-    require(!founders[msg.sender] || founderTokensLockedUntil < now || _to == investxPlatform, "INXToken locked for founders for arbitrary time unless sending to investx platform");
+    require(
+      !founders[msg.sender] || founderTokensLockedUntil < block.timestamp || _to == investxPlatform,
+      "INXToken locked for founders for arbitrary time unless sending to investx platform"
+    );
 
     return super.transfer(_to, _value);
   }
@@ -83,7 +87,10 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
     // transfers will be disabled during the crowdfunding phase - unless on the whitelist
     require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
 
-    require(!founders[msg.sender] || founderTokensLockedUntil < now || _to == investxPlatform, "INXToken locked for founders for arbitrary time unless sending to investx platform");
+    require(
+      !founders[msg.sender] || founderTokensLockedUntil < block.timestamp || _to == investxPlatform,
+        "INXToken locked for founders for arbitrary time unless sending to investx platform"
+    );
 
     return super.transferFrom(_from, _to, _value);
   }

@@ -4,6 +4,7 @@ import "./WhitelistedMintableToken.sol";
 import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
+
 /**
  * @title MintedKYCCrowdsale (adjusted to use WhitelistedMintableToken to deliver tokens)
  * Based on open-zeppelin's WhitelistedCrowdsale adjusted so INX whitelisted addresses can add and remove from KYC list
@@ -79,7 +80,10 @@ contract MintedKYCCrowdsale is Crowdsale, Pausable {
    * @param _beneficiary Token beneficiary
    * @param _weiAmount Amount of wei contributed
    */
-  function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal isSenderAndBeneficiaryKyc(_beneficiary) {
+  function _preValidatePurchase(
+    address _beneficiary,
+    uint256 _weiAmount
+  ) internal isSenderAndBeneficiaryKyc(_beneficiary) {
     super._preValidatePurchase(_beneficiary, _weiAmount);
   }
 

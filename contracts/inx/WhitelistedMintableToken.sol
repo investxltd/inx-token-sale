@@ -3,6 +3,7 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/access/Whitelist.sol";
 
+
 /**
  * @title Whitelisted Mintable token - allow whitelisted to mint
  * @dev Simple ERC20 Token example, with mintable token creation

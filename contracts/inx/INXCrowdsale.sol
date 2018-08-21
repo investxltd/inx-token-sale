@@ -11,10 +11,10 @@ contract INXCrowdsale is MintedKYCCrowdsale {
 
   mapping(address => uint256) public contributions;
 
-  // FIXME arbitrarily set to one minute until until we know when to open
-  uint256 public openingTime = now.add(30 minutes);
+  // FIXME arbitrarily set to one minute until until we kblock.timestamp when to open
+  uint256 public openingTime = block.timestamp.add(30 minutes);
 
-  // FIXME arbitrarily set to until we know when to close
+  // FIXME arbitrarily set to until we kblock.timestamp when to close
   uint256 public closingTime = openingTime.add(8 days);
 
   // minimum contribution in wei - this can change
@@ -26,7 +26,12 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   // How many token units a buyer gets per wei (during pre-sale)
   uint256 public preSaleRate;
 
-  constructor(address _wallet, INXToken _token, uint256 _rate, uint256 _preSaleRate) public Crowdsale(_rate, _wallet, _token) {
+  constructor(
+    address _wallet,
+    INXToken _token,
+    uint256 _rate,
+    uint256 _preSaleRate
+  ) public Crowdsale(_rate, _wallet, _token) {
     require(_preSaleRate > 0);
 
     preSaleRate = _preSaleRate;
@@ -109,7 +114,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @return Whether crowdsale period is open
    */
   function isCrowdsaleOpen() public view returns (bool) {
-    return now >= openingTime && now <= closingTime;
+    return block.timestamp >= openingTime && block.timestamp <= closingTime;
   }
 
   /**
