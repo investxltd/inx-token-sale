@@ -20,11 +20,6 @@
   "license": "MIT",
   "homepage": "https://github.com/investxltd/inx-token-sale#readme",
   "dependencies": {
-    "ascii-table": "0.0.9",
-    "asciichart": "^1.5.7",
-    "axios": "0.18.0",
-    "ethereum-libraries-string-utils": "^1.2.1",
-    "lodash": "4.17.10",
     "openzeppelin-solidity": "1.12.0",
     "truffle-hdwallet-provider": "0.0.6"
   },

@@ -25,8 +25,21 @@ npm run test
  * HTML output in `/coverage`
  * JSON output in `/.coverage.json`
  * Terminal output
+ 
+### Code Linting
+ 
+* Linting performed by [Solium](https://www.npmjs.com/package/solium)
 
+1. Install once with
+```bash
+npm install -g solium
+```
 
+2. Run linter
+```bash
+npm run lint
+```
+ 
 ## Token Sale Properties
 
 ### INX Token
