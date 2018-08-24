@@ -29,7 +29,7 @@ contract MintedKYCCrowdsale is Crowdsale, Pausable {
    * @dev Reverts if beneficiary and msg.sender is not KYC'd. Note: msg.sender and beneficiary can be different.
    */
   modifier isSenderAndBeneficiaryKyc(address _beneficiary) {
-    require(kyc[_beneficiary] && kyc[msg.sender]);
+    require(kyc[_beneficiary] && kyc[msg.sender], "Both message sender and beneficiary must be KYC approved");
     _;
   }
 
@@ -93,6 +93,6 @@ contract MintedKYCCrowdsale is Crowdsale, Pausable {
    * @param _tokenAmount Number of tokens to be minted
    */
   function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-    require(WhitelistedMintableToken(token).mint(_beneficiary, _tokenAmount));
+    require(WhitelistedMintableToken(token).mint(_beneficiary, _tokenAmount), "Unable to deliver tokens");
   }
 }

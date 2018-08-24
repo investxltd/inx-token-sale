@@ -19,9 +19,9 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
   // all the founders must be added to this mapping (with a true flag)
   mapping(address => bool) public founders;
 
-  // FIXME arbitrarily set - will be 24 months
   // founders have a token lock-up that stops transfers (to non-investx addresses) upto this timestamp
-  uint256 public founderTokensLockedUntil = block.timestamp.add(1 minutes).add(8 days);
+  // locked until after the 29th Feb 2020
+  uint256 constant public founderTokensLockedUntil = 1583020799;
 
   // address that the investx platform will use to receive INX tokens for investment
   address public investxPlatform;
@@ -32,30 +32,30 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
   }
 
   /**
+   * @dev Adds single address to founders (who are locked for a period of time).
+   * @param _founder Address to be added to the founder list
+   */
+  function addAddressToFounders(address _founder) external onlyOwner {
+    require(_founder != address(0), "Can not be zero address");
+
+    founders[_founder] = true;
+  }
+
+  /**
    * @dev Owner turn on "general" account-to-account transfers (once and only once)
    */
-  function enableTransfers() public onlyOwner {
+  function enableTransfers() external onlyOwner {
     require(!transfersEnabled, "Transfers already enabled");
 
     transfersEnabled = true;
   }
 
   /**
-   * @dev Adds single address to founders (who are locked for a period of time).
-   * @param _founder Address to be added to the founder list
-   */
-  function addAddressToFounders(address _founder) external onlyOwner {
-    require(_founder != address(0));
-
-    founders[_founder] = true;
-  }
-
-  /**
    * @dev Owner can set the investx platform address once built
    * @param _investxPlatform address of the investx platform (where you send your tokens for investments)
    */
-  function setInvestxPlatform(address _investxPlatform) public onlyOwner {
-    require(_investxPlatform != address(0));
+  function setInvestxPlatform(address _investxPlatform) external onlyOwner {
+    require(_investxPlatform != address(0), "Can not be zero address");
 
     investxPlatform = _investxPlatform;
   }

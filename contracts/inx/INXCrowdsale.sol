@@ -14,7 +14,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   // FIXME arbitrarily set to one minute until until we kblock.timestamp when to open
   uint256 public openingTime = block.timestamp.add(30 minutes);
 
-  // FIXME arbitrarily set to until we kblock.timestamp when to close
+  // FIXME arbitrarily set to until we block.timestamp when to close
   uint256 public closingTime = openingTime.add(8 days);
 
   // minimum contribution in wei - this can change

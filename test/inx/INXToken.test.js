@@ -14,7 +14,7 @@ require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
-contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccount, founder]) {
+contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccount, founder, inxPlatform]) {
 
   const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
@@ -844,7 +844,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
         });
       });
 
-      describe('founders', function () {
+      describe.only('founders', function () {
 
         const initialBalance = 1000;
 
@@ -899,7 +899,9 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
 
           it('can transfer as after founderTokensLockedUntil timestamp', async function () {
             const lockedUntil = await this.token.founderTokensLockedUntil();
-            await increaseTimeTo(lockedUntil + duration.seconds(5)); // force time to move on to just after locked time
+
+            // force time to move on to just after locked time - after 29th Feb 2020
+            await increaseTimeTo(lockedUntil + duration.seconds(5));
 
             await this.token.transfer(owner, initialBalance, {from: founder}).should.be.fulfilled;
           });
