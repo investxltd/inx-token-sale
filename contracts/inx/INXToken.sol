@@ -2,12 +2,13 @@ pragma solidity ^0.4.24;
 
 import "./WhitelistedMintableToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardBurnableToken.sol";
+import "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 
 
 /**
  * @title INXToken ERC20 token for use with the Investx Platform
  */
-contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
+contract INXToken is WhitelistedMintableToken, StandardBurnableToken, HasNoEther {
 
   string public constant name = "INX Token";
   string public constant symbol = "INX";
@@ -23,11 +24,11 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
   // locked until after the 29th Feb 2020
   uint256 constant public founderTokensLockedUntil = 1583020799;
 
-  // address that the investx platform will use to receive INX tokens for investment
+  // address that the investx platform will use to receive INX tokens for investment (when developed)
   address public investxPlatform;
 
-  constructor() public Whitelist() {
-    // owner is automatically whitelisted
+  constructor() public payable {
+    // contract creator is automatically whitelisted
     addAddressToWhitelist(msg.sender);
   }
 

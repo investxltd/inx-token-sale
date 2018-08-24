@@ -844,7 +844,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
         });
       });
 
-      describe.only('founders', function () {
+      describe('founders', function () {
 
         const initialBalance = 1000;
 

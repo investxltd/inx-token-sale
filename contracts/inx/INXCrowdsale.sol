@@ -116,7 +116,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
     super._updatePurchasingState(_beneficiary, _weiAmount);
     contributions[_beneficiary] = contributions[_beneficiary].add(_weiAmount);
   }
-  
+
   /**
   * @dev Extend parent behavior requiring contract to not be paused.
   * @param _beneficiary Token beneficiary
