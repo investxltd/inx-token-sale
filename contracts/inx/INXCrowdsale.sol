@@ -11,10 +11,10 @@ contract INXCrowdsale is MintedKYCCrowdsale {
 
   mapping(address => uint256) public contributions;
 
-  // FIXME arbitrarily set to one minute until until we kblock.timestamp when to open
+  // FIXME arbitrarily set
   uint256 public openingTime = block.timestamp.add(30 minutes);
 
-  // FIXME arbitrarily set to until we block.timestamp when to close
+  // FIXME arbitrarily set
   uint256 public closingTime = openingTime.add(8 days);
 
   // minimum contribution in wei - this can change
@@ -32,7 +32,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
     uint256 _rate,
     uint256 _preSaleRate
   ) public Crowdsale(_rate, _wallet, _token) {
-    require(_preSaleRate > 0);
+    require(_preSaleRate > 0, "Pre-sale rate must not be zero");
 
     preSaleRate = _preSaleRate;
   }
@@ -41,8 +41,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set rate during the crowdsale
    * @param _rate rate used to calculate tokens per wei
    */
-  function setRate(uint256 _rate) public onlyOwner {
-    require(_rate > 0);
+  function setRate(uint256 _rate) external onlyOwner {
+    require(_rate > 0, "Rate must not be zero");
 
     rate = _rate;
   }
@@ -51,8 +51,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set pre-sale rate during the crowdsale
    * @param _preSaleRate rate used to calculate tokens per wei in pre-sale
    */
-  function setPreSaleRate(uint256 _preSaleRate) public onlyOwner {
-    require(_preSaleRate > 0);
+  function setPreSaleRate(uint256 _preSaleRate) external onlyOwner {
+    require(_preSaleRate > 0, "Pre-sale rate must not be zero");
 
     preSaleRate = _preSaleRate;
   }
@@ -61,8 +61,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set the closing time for the crowdsale
    * @param _closingTime timestamp for the close
    */
-  function setClosingTime(uint256 _closingTime) public onlyOwner {
-    require(_closingTime > openingTime);
+  function setClosingTime(uint256 _closingTime) external onlyOwner {
+    require(_closingTime > openingTime, "Closing time must be after opening time");
 
     closingTime = _closingTime;
   }
@@ -71,8 +71,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set the minimum contribution. This will change from pre-sale to public.
    * @param _minContribution amount of min contribution
    */
-  function setMinContribution(uint256 _minContribution) public onlyOwner {
-    require(_minContribution > 0);
+  function setMinContribution(uint256 _minContribution) external onlyOwner {
+    require(_minContribution > 0, "Minimum contribution must not be zero");
 
     minContribution = _minContribution;
   }
@@ -80,10 +80,18 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   /**
    * @dev Owner can trigger public sale (moves from pre-sale to public)
    */
-  function publicSale() public onlyOwner {
-    require(inPreSale);
+  function publicSale() external onlyOwner {
+    require(inPreSale, "Must be in pre-sale to start public sale");
 
     inPreSale = false;
+  }
+
+  /**
+   * @dev Checks whether the period in which the crowdsale is open has elapsed.
+   * @return Whether crowdsale period is open
+   */
+  function isCrowdsaleOpen() public view returns (bool) {
+    return block.timestamp >= openingTime && block.timestamp <= closingTime;
   }
 
   /**
@@ -108,15 +116,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
     super._updatePurchasingState(_beneficiary, _weiAmount);
     contributions[_beneficiary] = contributions[_beneficiary].add(_weiAmount);
   }
-
-  /**
-   * @dev Checks whether the period in which the crowdsale is open has elapsed.
-   * @return Whether crowdsale period is open
-   */
-  function isCrowdsaleOpen() public view returns (bool) {
-    return block.timestamp >= openingTime && block.timestamp <= closingTime;
-  }
-
+  
   /**
   * @dev Extend parent behavior requiring contract to not be paused.
   * @param _beneficiary Token beneficiary
