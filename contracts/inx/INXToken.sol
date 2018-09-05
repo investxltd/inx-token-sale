@@ -21,8 +21,8 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken, HasNoEther
   mapping(address => bool) public founders;
 
   // founders have a token lock-up that stops transfers (to non-investx addresses) upto this timestamp
-  // locked until after the 29th Feb 2020
-  uint256 constant public founderTokensLockedUntil = 1583020799;
+  // locked until after the Sunday, February 28, 2021 11:59:59 PM
+  uint256 constant public founderTokensLockedUntil = 1614556799;
 
   // address that the investx platform will use to receive INX tokens for investment (when developed)
   address public investxPlatform;
