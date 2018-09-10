@@ -22,7 +22,7 @@ module.exports = function (deployer, network, accounts) {
     }
 
     console.log(`_owner - [${_owner}]`);
-    
+
     INXToken.deployed().then((inxToken) => {
         return inxToken.addAddressToWhitelist(INXCrowdsale.address, {from: _owner});
     });

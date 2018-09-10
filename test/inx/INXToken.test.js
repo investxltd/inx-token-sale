@@ -146,6 +146,17 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
         await this.token.addAddressToWhitelist(recipient, {from: owner});
         await this.token.transfer(anotherAccount, 1, {from: recipient}).should.be.fulfilled;
       });
+
+        it('should allow whitelisted address to call transferFrom within ICO', async function () {
+            // ensure owner has 1 token
+            await this.token.mint(owner, 1, {from: owner});
+            await this.token.transfer(recipient, 1, {from: owner}).should.be.fulfilled;
+
+            await this.token.approve(anotherAccount, 1, {from: recipient});
+
+            await this.token.addAddressToWhitelist(recipient, {from: owner});
+            await this.token.transferFrom(recipient, anotherAccount, 1, {from: anotherAccount}).should.be.fulfilled;
+        });
     });
 
     context('in adversarial conditions', function () {
@@ -186,7 +197,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
   });
 
   describe('locks transfers', function () {
-    it('should not allow unwhitelisted transfers if not enabled', async function () {
+    it('should not allow unwhitelisted transfer if not enabled', async function () {
       const enabled = await this.token.transfersEnabled();
       assert.isFalse(enabled);
 
@@ -194,7 +205,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
       await assertRevert(this.token.transfer(owner, 1, ({from: anotherAccount})));
     });
 
-    it('should allow unwhitelisted transfers if enabled', async function () {
+    it('should allow unwhitelisted transfer if enabled', async function () {
       let enabled = await this.token.transfersEnabled();
       assert.isFalse(enabled);
 
@@ -206,7 +217,31 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
       await this.token.transfer(owner, 1, ({from: anotherAccount})).should.be.fulfilled;
     });
 
-    it('should allow unwhitelisted transfers before unlocked time', async function () {
+      it('should not allow unwhitelisted transferFrom if not enabled', async function () {
+          const enabled = await this.token.transfersEnabled();
+          assert.isFalse(enabled);
+
+          await this.token.mint(anotherAccount, 1, {from: owner});
+          await this.token.approve(recipient, 1, {from: anotherAccount});
+
+          await assertRevert(this.token.transferFrom(anotherAccount, recipient, 1, ({from: recipient})));
+      });
+
+      it('should allow unwhitelisted transferFrom if enabled', async function () {
+          let enabled = await this.token.transfersEnabled();
+          assert.isFalse(enabled);
+
+          await this.token.enableTransfers({from: owner});
+          enabled = await this.token.transfersEnabled();
+          assert.isTrue(enabled);
+
+          await this.token.mint(anotherAccount, 1, {from: owner});
+          await this.token.approve(recipient, 1, {from: anotherAccount});
+
+          await this.token.transferFrom(anotherAccount, recipient, 1, ({from: recipient})).should.be.fulfilled;
+      });
+
+    it('should allow unwhitelisted transfer before unlocked time', async function () {
 
       // whitelist recipient
       await this.token.addAddressToWhitelist(recipient, {from: owner});

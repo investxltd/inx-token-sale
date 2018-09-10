@@ -86,10 +86,10 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken, HasNoEther
    */
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     // transfers will be disabled during the crowdfunding phase - unless on the whitelist
-    require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
+    require(transfersEnabled || whitelist(_from), "INXToken transfers disabled");
 
     require(
-      !founders[msg.sender] || founderTokensLockedUntil < block.timestamp || _to == investxPlatform,
+      !founders[_from] || founderTokensLockedUntil < block.timestamp || _to == investxPlatform,
         "INXToken locked for founders for arbitrary time unless sending to investx platform"
     );
 
