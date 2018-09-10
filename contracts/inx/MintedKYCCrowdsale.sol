@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
 import "./WhitelistedMintableToken.sol";
 import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
