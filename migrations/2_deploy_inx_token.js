@@ -6,7 +6,7 @@ const HDWalletProvider = require('truffle-hdwallet-provider');
 const infuraApikey = 'fkWxG7nrciMRrRD36yVj';
 let mnemonic = require('../mnemonic');
 
-module.exports = async function (deployer, network, accounts) {
+module.exports = function (deployer, network, accounts) {
 
   console.log(`Running within network = ${network}`);
 

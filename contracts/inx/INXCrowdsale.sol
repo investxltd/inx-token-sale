@@ -1,6 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
-import "./INXToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./MintedKYCCrowdsale.sol";
 
 
@@ -28,7 +28,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
 
   constructor(
     address _wallet,
-    INXToken _token,
+    ERC20 _token,
     uint256 _rate,
     uint256 _preSaleRate
   ) public Crowdsale(_rate, _wallet, _token) {

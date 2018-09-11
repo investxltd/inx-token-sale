@@ -146,6 +146,17 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
         await this.token.addAddressToWhitelist(recipient, {from: owner});
         await this.token.transfer(anotherAccount, 1, {from: recipient}).should.be.fulfilled;
       });
+
+      it('should allow whitelisted address to call transferFrom within ICO', async function () {
+        // ensure owner has 1 token
+        await this.token.mint(owner, 1, {from: owner});
+        await this.token.transfer(recipient, 1, {from: owner}).should.be.fulfilled;
+
+        await this.token.approve(anotherAccount, 1, {from: recipient});
+
+        await this.token.addAddressToWhitelist(recipient, {from: owner});
+        await this.token.transferFrom(recipient, anotherAccount, 1, {from: anotherAccount}).should.be.fulfilled;
+      });
     });
 
     context('in adversarial conditions', function () {
@@ -186,7 +197,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
   });
 
   describe('locks transfers', function () {
-    it('should not allow unwhitelisted transfers if not enabled', async function () {
+    it('should not allow unwhitelisted transfer if not enabled', async function () {
       const enabled = await this.token.transfersEnabled();
       assert.isFalse(enabled);
 
@@ -194,7 +205,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
       await assertRevert(this.token.transfer(owner, 1, ({from: anotherAccount})));
     });
 
-    it('should allow unwhitelisted transfers if enabled', async function () {
+    it('should allow unwhitelisted transfer if enabled', async function () {
       let enabled = await this.token.transfersEnabled();
       assert.isFalse(enabled);
 
@@ -206,7 +217,31 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
       await this.token.transfer(owner, 1, ({from: anotherAccount})).should.be.fulfilled;
     });
 
-    it('should allow unwhitelisted transfers before unlocked time', async function () {
+    it('should not allow unwhitelisted transferFrom if not enabled', async function () {
+      const enabled = await this.token.transfersEnabled();
+      assert.isFalse(enabled);
+
+      await this.token.mint(anotherAccount, 1, {from: owner});
+      await this.token.approve(recipient, 1, {from: anotherAccount});
+
+      await assertRevert(this.token.transferFrom(anotherAccount, recipient, 1, ({from: recipient})));
+    });
+
+    it('should allow unwhitelisted transferFrom if enabled', async function () {
+      let enabled = await this.token.transfersEnabled();
+      assert.isFalse(enabled);
+
+      await this.token.enableTransfers({from: owner});
+      enabled = await this.token.transfersEnabled();
+      assert.isTrue(enabled);
+
+      await this.token.mint(anotherAccount, 1, {from: owner});
+      await this.token.approve(recipient, 1, {from: anotherAccount});
+
+      await this.token.transferFrom(anotherAccount, recipient, 1, ({from: recipient})).should.be.fulfilled;
+    });
+
+    it('should allow unwhitelisted transfer before unlocked time', async function () {
 
       // whitelist recipient
       await this.token.addAddressToWhitelist(recipient, {from: owner});
@@ -855,6 +890,8 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
           assert.isTrue(isFounder);
 
           await this.token.mint(founder, initialBalance, {from: owner});
+          await this.token.approve(extraAccount, initialBalance, {from: founder});
+
           await this.token.mint(anotherAccount, initialBalance, {from: owner});
 
           await this.token.enableTransfers({from: owner});
@@ -869,6 +906,10 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
             await assertRevert(this.token.transfer(owner, initialBalance, {from: founder}));
           });
 
+          it('can not transferFrom as before founderTokensLockedUntil timestamp', async function () {
+            await assertRevert(this.token.transferFrom(founder, extraAccount, initialBalance, {from: extraAccount}));
+          });
+
           it('can transfer as before founderTokensLockedUntil timestamp BUT to investx platform', async function () {
             await assertRevert(this.token.transfer(owner, initialBalance, {from: founder}));
 
@@ -878,6 +919,15 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
             await this.token.transfer(investxPlatform, initialBalance, {from: founder}).should.be.fulfilled;
           });
 
+          it('can transferFrom as before founderTokensLockedUntil timestamp BUT to investx platform', async function () {
+            await assertRevert(this.token.transferFrom(founder, owner, initialBalance, {from: extraAccount}));
+
+            await this.token.setInvestxPlatform(ONE_ADDRESS, {from: owner});
+            const investxPlatform = await this.token.investxPlatform();
+
+            await this.token.transferFrom(founder, investxPlatform, initialBalance, {from: extraAccount}).should.be.fulfilled;
+          });
+
           it('can not transfer as before founderTokensLockedUntil timestamp and transfer to is still zero address', async function () {
             await assertRevert(this.token.transfer(owner, initialBalance, {from: founder}));
 
@@ -885,8 +935,20 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
             await assertRevert(this.token.transfer(investxPlatform, initialBalance, {from: founder}));
           });
 
+          it('can not transferFrom as before founderTokensLockedUntil timestamp and transfer to is still zero address', async function () {
+            await assertRevert(this.token.transferFrom(founder, owner, initialBalance, {from: extraAccount}));
+
+            const investxPlatform = await this.token.investxPlatform();
+            await assertRevert(this.token.transferFrom(founder, investxPlatform, initialBalance, {from: extraAccount}));
+          });
+
           it('can transfer as not founder', async function () {
             await this.token.transfer(owner, initialBalance, {from: anotherAccount}).should.be.fulfilled;
+          });
+
+          it('can transferFrom as not founder', async function () {
+            await this.token.approve(extraAccount, initialBalance, {from: anotherAccount});
+            await this.token.transferFrom(anotherAccount, owner, initialBalance, {from: extraAccount}).should.be.fulfilled;
           });
 
           it('can not set investx platform to zero address', async function () {
@@ -901,9 +963,18 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
             const lockedUntil = await this.token.founderTokensLockedUntil();
 
             // force time to move on to just after locked time - after 29th Feb 2020
-            await increaseTimeTo(lockedUntil + duration.seconds(5));
+            await increaseTimeTo(lockedUntil + duration.seconds(300));
 
             await this.token.transfer(owner, initialBalance, {from: founder}).should.be.fulfilled;
+          });
+
+          it('can transferFrom as after founderTokensLockedUntil timestamp', async function () {
+            const lockedUntil = await this.token.founderTokensLockedUntil();
+
+            // force time to move on to just after locked time - after 29th Feb 2020
+            await increaseTimeTo(lockedUntil + duration.seconds(300));
+
+            await this.token.transferFrom(founder, owner, initialBalance, {from: extraAccount}).should.be.fulfilled;
           });
         });
       });
