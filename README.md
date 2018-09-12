@@ -15,8 +15,7 @@
 
 ### INX Crowdsale Smart Contract
 
-* Responsible for managing ICO token sales
-
+* Smart contract responsible for processing contributions and minting and distributing INX tokens
 * The **INXCrowdsale** has the following properties
   * Ability to specify `rate` and `preSaleRate`rate from ETH to INX tokens
     * These can be adjusted by _owner_ of the smart contract
@@ -30,7 +29,7 @@
   * Ability to manage a `kyc` address list for contributors who are permitted to participate in the token sale
     * If the sender of a transaction is not in the `kyc` list the transaction is rejected
     * A third party solution is used for formal KYC/AML approval, the contract can be updated with approved accounts
-  * The crowdsale is **pausable** which can stop any more contributors from participating in case of error, fault etc
+  * The crowdsale has a `paused` flag which can stop any more contributors from participating. This flag can be reversed to enable the token sale again.
   * Manages a `inxWhitelist` of approved accounts that can add and remove accounts from the `kyc` address list
 
 ## Deployment
