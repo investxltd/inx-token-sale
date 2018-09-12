@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
 
@@ -12,6 +12,27 @@ contract ERC20Basic {
   function balanceOf(address _who) public view returns (uint256);
   function transfer(address _to, uint256 _value) public returns (bool);
   event Transfer(address indexed from, address indexed to, uint256 value);
+}
+
+// File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
+
+/**
+ * @title ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+contract ERC20 is ERC20Basic {
+  function allowance(address _owner, address _spender)
+    public view returns (uint256);
+
+  function transferFrom(address _from, address _to, uint256 _value)
+    public returns (bool);
+
+  function approve(address _spender, uint256 _value) public returns (bool);
+  event Approval(
+    address indexed owner,
+    address indexed spender,
+    uint256 value
+  );
 }
 
 // File: openzeppelin-solidity/contracts/math/SafeMath.sol
@@ -110,27 +131,6 @@ contract BasicToken is ERC20Basic {
     return balances[_owner];
   }
 
-}
-
-// File: openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
-
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract ERC20 is ERC20Basic {
-  function allowance(address _owner, address _spender)
-    public view returns (uint256);
-
-  function transferFrom(address _from, address _to, uint256 _value)
-    public returns (bool);
-
-  function approve(address _spender, uint256 _value) public returns (bool);
-  event Approval(
-    address indexed owner,
-    address indexed spender,
-    uint256 value
-  );
 }
 
 // File: openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol
@@ -581,152 +581,12 @@ contract WhitelistedMintableToken is StandardToken, Whitelist {
    * @param _amount The amount of tokens to mint.
    * @return A boolean that indicates if the operation was successful.
    */
-  function mint(address _to, uint256 _amount) onlyIfWhitelisted(msg.sender) public returns (bool) {
+  function mint(address _to, uint256 _amount) public onlyIfWhitelisted(msg.sender) returns (bool) {
     totalSupply_ = totalSupply_.add(_amount);
     balances[_to] = balances[_to].add(_amount);
     emit Mint(_to, _amount);
     emit Transfer(address(0), _to, _amount);
     return true;
-  }
-}
-
-// File: openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol
-
-/**
- * @title Burnable Token
- * @dev Token that can be irreversibly burned (destroyed).
- */
-contract BurnableToken is BasicToken {
-
-  event Burn(address indexed burner, uint256 value);
-
-  /**
-   * @dev Burns a specific amount of tokens.
-   * @param _value The amount of token to be burned.
-   */
-  function burn(uint256 _value) public {
-    _burn(msg.sender, _value);
-  }
-
-  function _burn(address _who, uint256 _value) internal {
-    require(_value <= balances[_who]);
-    // no need to require value <= totalSupply, since that would imply the
-    // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-
-    balances[_who] = balances[_who].sub(_value);
-    totalSupply_ = totalSupply_.sub(_value);
-    emit Burn(_who, _value);
-    emit Transfer(_who, address(0), _value);
-  }
-}
-
-// File: openzeppelin-solidity/contracts/token/ERC20/StandardBurnableToken.sol
-
-/**
- * @title Standard Burnable Token
- * @dev Adds burnFrom method to ERC20 implementations
- */
-contract StandardBurnableToken is BurnableToken, StandardToken {
-
-  /**
-   * @dev Burns a specific amount of tokens from the target address and decrements allowance
-   * @param _from address The address which you want to send tokens from
-   * @param _value uint256 The amount of token to be burned
-   */
-  function burnFrom(address _from, uint256 _value) public {
-    require(_value <= allowed[_from][msg.sender]);
-    // Should https://github.com/OpenZeppelin/zeppelin-solidity/issues/707 be accepted,
-    // this function needs to emit an event with the updated approval.
-    allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-    _burn(_from, _value);
-  }
-}
-
-// File: contracts/inx/INXToken.sol
-
-/**
- * @title INXToken ERC20 token for use with the Investx Platform
- */
-contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
-
-  string public constant name = "INX Token";
-  string public constant symbol = "INX";
-  uint8 public constant decimals = 18;
-
-  // flag to control "general" transfers (outside of whitelisted and founders)
-  bool public transfersEnabled = false;
-
-  // all the founders must be added to this mapping (with a true flag)
-  mapping(address => bool) public founders;
-
-  // FIXME arbitrarily set - will be 24 months
-  // founders have a token lock-up that stops transfers (to non-investx addresses) upto this timestamp
-  uint256 public founderTokensLockedUntil = now.add(1 minutes).add(8 days);
-
-  // address that the investx platform will use to receive INX tokens for investment
-  address public investxPlatform;
-
-  constructor() public Whitelist() {
-    // owner is automatically whitelisted
-    addAddressToWhitelist(msg.sender);
-  }
-
-  /**
-   * @dev Owner turn on "general" account-to-account transfers (once and only once)
-   */
-  function enableTransfers() onlyOwner public {
-    require(!transfersEnabled, "Transfers already enabled");
-
-    transfersEnabled = true;
-  }
-
-  /**
-   * @dev Adds single address to founders (who are locked for a period of time).
-   * @param _founder Address to be added to the founder list
-   */
-  function addAddressToFounders(address _founder) external onlyOwner {
-    require(_founder != address(0));
-
-    founders[_founder] = true;
-  }
-
-  /**
-   * @dev Owner can set the investx platform address once built
-   * @param _investxPlatform address of the investx platform (where you send your tokens for investments)
-   */
-  function setInvestxPlatform(address _investxPlatform) onlyOwner public {
-    require(_investxPlatform != address(0));
-
-    investxPlatform = _investxPlatform;
-  }
-
- /**
-  * @dev transfer token for a specified address
-  * @param _to The address to transfer to.
-  * @param _value The amount to be transferred.
-  */
-  function transfer(address _to, uint256 _value) public returns (bool) {
-    // transfers will be disabled during the crowdfunding phase - unless on the whitelist
-    require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
-
-    require(!founders[msg.sender] || founderTokensLockedUntil < now || _to == investxPlatform, "INXToken locked for founders for arbitrary time unless sending to investx platform");
-
-    return super.transfer(_to, _value);
-  }
-
-  /**
-   * @dev Transfer tokens from one address to another
-   * @param _from address The address which you want to send tokens from
-   * @param _to address The address which you want to transfer to
-   * @param _value uint256 the amount of tokens to be transferred
-   */
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-    // transfers will be disabled during the crowdfunding phase - unless on the whitelist
-    require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
-
-    require(!founders[msg.sender] || founderTokensLockedUntil < now || _to == investxPlatform, "INXToken locked for founders for arbitrary time unless sending to investx platform");
-
-    return super.transferFrom(_from, _to, _value);
   }
 }
 
@@ -1042,7 +902,7 @@ contract MintedKYCCrowdsale is Crowdsale, Pausable {
    * @dev Reverts if beneficiary and msg.sender is not KYC'd. Note: msg.sender and beneficiary can be different.
    */
   modifier isSenderAndBeneficiaryKyc(address _beneficiary) {
-    require(kyc[_beneficiary] && kyc[msg.sender]);
+    require(kyc[_beneficiary] && kyc[msg.sender], "Both message sender and beneficiary must be KYC approved");
     _;
   }
 
@@ -1093,7 +953,10 @@ contract MintedKYCCrowdsale is Crowdsale, Pausable {
    * @param _beneficiary Token beneficiary
    * @param _weiAmount Amount of wei contributed
    */
-  function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal isSenderAndBeneficiaryKyc(_beneficiary) {
+  function _preValidatePurchase(
+    address _beneficiary,
+    uint256 _weiAmount
+  ) internal isSenderAndBeneficiaryKyc(_beneficiary) {
     super._preValidatePurchase(_beneficiary, _weiAmount);
   }
 
@@ -1103,7 +966,7 @@ contract MintedKYCCrowdsale is Crowdsale, Pausable {
    * @param _tokenAmount Number of tokens to be minted
    */
   function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-    require(WhitelistedMintableToken(token).mint(_beneficiary, _tokenAmount));
+    require(WhitelistedMintableToken(token).mint(_beneficiary, _tokenAmount), "Unable to deliver tokens");
   }
 }
 
@@ -1116,10 +979,10 @@ contract INXCrowdsale is MintedKYCCrowdsale {
 
   mapping(address => uint256) public contributions;
 
-  // FIXME arbitrarily set to one minute until until we know when to open
-  uint256 public openingTime = now.add(30 minutes);
+  // FIXME arbitrarily set
+  uint256 public openingTime = block.timestamp.add(30 minutes);
 
-  // FIXME arbitrarily set to until we know when to close
+  // FIXME arbitrarily set
   uint256 public closingTime = openingTime.add(8 days);
 
   // minimum contribution in wei - this can change
@@ -1131,8 +994,13 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   // How many token units a buyer gets per wei (during pre-sale)
   uint256 public preSaleRate;
 
-  constructor(address _wallet, INXToken _token, uint256 _rate, uint256 _preSaleRate) public Crowdsale(_rate, _wallet, _token) {
-    require(_preSaleRate > 0);
+  constructor(
+    address _wallet,
+    ERC20 _token,
+    uint256 _rate,
+    uint256 _preSaleRate
+  ) public Crowdsale(_rate, _wallet, _token) {
+    require(_preSaleRate > 0, "Pre-sale rate must not be zero");
 
     preSaleRate = _preSaleRate;
   }
@@ -1141,8 +1009,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set rate during the crowdsale
    * @param _rate rate used to calculate tokens per wei
    */
-  function setRate(uint256 _rate) onlyOwner public {
-    require(_rate > 0);
+  function setRate(uint256 _rate) external onlyOwner {
+    require(_rate > 0, "Rate must not be zero");
 
     rate = _rate;
   }
@@ -1151,8 +1019,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set pre-sale rate during the crowdsale
    * @param _preSaleRate rate used to calculate tokens per wei in pre-sale
    */
-  function setPreSaleRate(uint256 _preSaleRate) onlyOwner public {
-    require(_preSaleRate > 0);
+  function setPreSaleRate(uint256 _preSaleRate) external onlyOwner {
+    require(_preSaleRate > 0, "Pre-sale rate must not be zero");
 
     preSaleRate = _preSaleRate;
   }
@@ -1161,8 +1029,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set the closing time for the crowdsale
    * @param _closingTime timestamp for the close
    */
-  function setClosingTime(uint256 _closingTime) onlyOwner public {
-    require(_closingTime > openingTime);
+  function setClosingTime(uint256 _closingTime) external onlyOwner {
+    require(_closingTime > openingTime, "Closing time must be after opening time");
 
     closingTime = _closingTime;
   }
@@ -1171,8 +1039,8 @@ contract INXCrowdsale is MintedKYCCrowdsale {
    * @dev Owner can set the minimum contribution. This will change from pre-sale to public.
    * @param _minContribution amount of min contribution
    */
-  function setMinContribution(uint256 _minContribution) onlyOwner public {
-    require(_minContribution > 0);
+  function setMinContribution(uint256 _minContribution) external onlyOwner {
+    require(_minContribution > 0, "Minimum contribution must not be zero");
 
     minContribution = _minContribution;
   }
@@ -1180,10 +1048,18 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   /**
    * @dev Owner can trigger public sale (moves from pre-sale to public)
    */
-  function publicSale() onlyOwner public {
-    require(inPreSale);
+  function publicSale() external onlyOwner {
+    require(inPreSale, "Must be in pre-sale to start public sale");
 
     inPreSale = false;
+  }
+
+  /**
+   * @dev Checks whether the period in which the crowdsale is open has elapsed.
+   * @return Whether crowdsale period is open
+   */
+  function isCrowdsaleOpen() public view returns (bool) {
+    return block.timestamp >= openingTime && block.timestamp <= closingTime;
   }
 
   /**
@@ -1207,14 +1083,6 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   function _updatePurchasingState(address _beneficiary, uint256 _weiAmount) internal {
     super._updatePurchasingState(_beneficiary, _weiAmount);
     contributions[_beneficiary] = contributions[_beneficiary].add(_weiAmount);
-  }
-
-  /**
-   * @dev Checks whether the period in which the crowdsale is open has elapsed.
-   * @return Whether crowdsale period is open
-   */
-  function isCrowdsaleOpen() public view returns (bool) {
-    return now >= openingTime && now <= closingTime;
   }
 
   /**

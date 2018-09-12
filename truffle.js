@@ -45,8 +45,8 @@ module.exports = {
                 return new HDWalletProvider(mnemonic_live, `https://mainnet.infura.io/${infuraApikey}`);
             },
             network_id: 1,
-            gas: 4075039, // default = 4712388
-            gasPrice: 2000000000 // default = 100 gwei = 100000000000
+            gas: 2100454, // default = 4712388
+            gasPrice: 4500000000 // 4.5 gwei
         },
         coverage: {
             host: "localhost",

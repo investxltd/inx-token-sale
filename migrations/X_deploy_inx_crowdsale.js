@@ -1,5 +1,6 @@
 /* global web3:true */
 const INXToken = artifacts.require('INXToken');
+const INXCrowdsale = artifacts.require('INXCrowdsale');
 
 module.exports = function (deployer, network, accounts) {
 
@@ -8,5 +9,5 @@ module.exports = function (deployer, network, accounts) {
   let _owner = accounts[0];
   console.log(`_owner - [${_owner}]`);
 
-  deployer.deploy(INXToken)
+  return deployer.deploy(INXCrowdsale, _owner, INXToken.address, 355, 400, {from: _owner});
 };

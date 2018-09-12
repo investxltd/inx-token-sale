@@ -7,6 +7,7 @@ import "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 
 /**
  * @title INXToken ERC20 token for use with the Investx Platform
+ * See investx.io for more details
  */
 contract INXToken is WhitelistedMintableToken, StandardBurnableToken, HasNoEther {
 

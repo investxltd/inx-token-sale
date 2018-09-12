@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
 // File: openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol
 
@@ -581,7 +581,7 @@ contract WhitelistedMintableToken is StandardToken, Whitelist {
    * @param _amount The amount of tokens to mint.
    * @return A boolean that indicates if the operation was successful.
    */
-  function mint(address _to, uint256 _amount) onlyIfWhitelisted(msg.sender) public returns (bool) {
+  function mint(address _to, uint256 _amount) public onlyIfWhitelisted(msg.sender) returns (bool) {
     totalSupply_ = totalSupply_.add(_amount);
     balances[_to] = balances[_to].add(_amount);
     emit Mint(_to, _amount);
@@ -642,12 +642,52 @@ contract StandardBurnableToken is BurnableToken, StandardToken {
   }
 }
 
+// File: openzeppelin-solidity/contracts/ownership/HasNoEther.sol
+
+/**
+ * @title Contracts that should not own Ether
+ * @author Remco Bloemen <remco@2π.com>
+ * @dev This tries to block incoming ether to prevent accidental loss of Ether. Should Ether end up
+ * in the contract, it will allow the owner to reclaim this Ether.
+ * @notice Ether can still be sent to this contract by:
+ * calling functions labeled `payable`
+ * `selfdestruct(contract_address)`
+ * mining directly to the contract address
+ */
+contract HasNoEther is Ownable {
+
+  /**
+  * @dev Constructor that rejects incoming Ether
+  * The `payable` flag is added so we can access `msg.value` without compiler warning. If we
+  * leave out payable, then Solidity will allow inheriting contracts to implement a payable
+  * constructor. By doing it this way we prevent a payable constructor from working. Alternatively
+  * we could use assembly to access msg.value.
+  */
+  constructor() public payable {
+    require(msg.value == 0);
+  }
+
+  /**
+   * @dev Disallows direct send by setting a default function without the `payable` flag.
+   */
+  function() external {
+  }
+
+  /**
+   * @dev Transfer all Ether held by the contract to the owner.
+   */
+  function reclaimEther() external onlyOwner {
+    owner.transfer(address(this).balance);
+  }
+}
+
 // File: contracts/inx/INXToken.sol
 
 /**
  * @title INXToken ERC20 token for use with the Investx Platform
+ * See investx.io for more details
  */
-contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
+contract INXToken is WhitelistedMintableToken, StandardBurnableToken, HasNoEther {
 
   string public constant name = "INX Token";
   string public constant symbol = "INX";
@@ -659,25 +699,16 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
   // all the founders must be added to this mapping (with a true flag)
   mapping(address => bool) public founders;
 
-  // FIXME arbitrarily set - will be 24 months
   // founders have a token lock-up that stops transfers (to non-investx addresses) upto this timestamp
-  uint256 public founderTokensLockedUntil = now.add(1 minutes).add(8 days);
+  // locked until after the Sunday, February 28, 2021 11:59:59 PM
+  uint256 constant public founderTokensLockedUntil = 1614556799;
 
-  // address that the investx platform will use to receive INX tokens for investment
+  // address that the investx platform will use to receive INX tokens for investment (when developed)
   address public investxPlatform;
 
-  constructor() public Whitelist() {
-    // owner is automatically whitelisted
+  constructor() public payable {
+    // contract creator is automatically whitelisted
     addAddressToWhitelist(msg.sender);
-  }
-
-  /**
-   * @dev Owner turn on "general" account-to-account transfers (once and only once)
-   */
-  function enableTransfers() onlyOwner public {
-    require(!transfersEnabled, "Transfers already enabled");
-
-    transfersEnabled = true;
   }
 
   /**
@@ -685,17 +716,26 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
    * @param _founder Address to be added to the founder list
    */
   function addAddressToFounders(address _founder) external onlyOwner {
-    require(_founder != address(0));
+    require(_founder != address(0), "Can not be zero address");
 
     founders[_founder] = true;
+  }
+
+  /**
+   * @dev Owner turn on "general" account-to-account transfers (once and only once)
+   */
+  function enableTransfers() external onlyOwner {
+    require(!transfersEnabled, "Transfers already enabled");
+
+    transfersEnabled = true;
   }
 
   /**
    * @dev Owner can set the investx platform address once built
    * @param _investxPlatform address of the investx platform (where you send your tokens for investments)
    */
-  function setInvestxPlatform(address _investxPlatform) onlyOwner public {
-    require(_investxPlatform != address(0));
+  function setInvestxPlatform(address _investxPlatform) external onlyOwner {
+    require(_investxPlatform != address(0), "Can not be zero address");
 
     investxPlatform = _investxPlatform;
   }
@@ -709,7 +749,10 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
     // transfers will be disabled during the crowdfunding phase - unless on the whitelist
     require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
 
-    require(!founders[msg.sender] || founderTokensLockedUntil < now || _to == investxPlatform, "INXToken locked for founders for arbitrary time unless sending to investx platform");
+    require(
+      !founders[msg.sender] || founderTokensLockedUntil < block.timestamp || _to == investxPlatform,
+      "INXToken locked for founders for arbitrary time unless sending to investx platform"
+    );
 
     return super.transfer(_to, _value);
   }
@@ -722,9 +765,12 @@ contract INXToken is WhitelistedMintableToken, StandardBurnableToken {
    */
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     // transfers will be disabled during the crowdfunding phase - unless on the whitelist
-    require(transfersEnabled || whitelist(msg.sender), "INXToken transfers disabled");
+    require(transfersEnabled || whitelist(_from), "INXToken transfers disabled");
 
-    require(!founders[msg.sender] || founderTokensLockedUntil < now || _to == investxPlatform, "INXToken locked for founders for arbitrary time unless sending to investx platform");
+    require(
+      !founders[_from] || founderTokensLockedUntil < block.timestamp || _to == investxPlatform,
+        "INXToken locked for founders for arbitrary time unless sending to investx platform"
+    );
 
     return super.transferFrom(_from, _to, _value);
   }

@@ -42,3 +42,4 @@ build/
 # truffle
 .node-xmlhttprequest-*
 mnemonic.js
+mnemonic_live.js

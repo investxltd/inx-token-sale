@@ -1,5 +1,7 @@
 # INX-TOKEN-SALE
 
+Contracts are 
+
 ### INX Token Smart Contract
 
 * Is ERC20 compliant
