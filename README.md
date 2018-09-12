@@ -4,13 +4,11 @@
 
 * Is ERC20 compliant
 * Responsible for holding all tokens balances on the INX platform
-
-* The **token** has the following properties
+* The **INXToken** has the following properties
   * Defines a token `name` - `INX Token`
   * Defines a token `symbol` - `INX`
   * Defines the number of `decimals` the token is divisible by - `18`
   * Defines the total supply of tokens - tokens are minted when contributions are made or via Investx whitelisted accredited accounts
-
 * The token has a `transfersEnabled` flag that can be called once and once only to enable transfers for all (intended to be used on token sale completion)
 * Defines the `investxPlatform` address which will represent the account where INX token will be sent to invest in SME businesses.
 * Includes a Investx `founders` list with a locked until date that restricts transfers until Sunday, February 28, 2021 11:59:59 PM. Within this period tokens can be transfered to the `investxPlatform` platform to invest in SME businesses. 
@@ -19,16 +17,23 @@
 
 * Responsible for managing ICO token sales
 
-* The **crowdsale** has the following properties
-  * Ability to specify **min** contributions per address
-  * Ability to define a **open and close date** for the full ICO - tokens cannot be bought until the ICO opens (or after close)
-  * Ability to transfer ETH **immeadiately** 
-  * Ability to define **whitelisted** address for people who are permitted to participate in the crowdsale
-    * If not whitelisted the transaction is rejected
-    * A third party solution for performing KYC/AML is required, the contract simply stores a map of approved addresses
+* The **INXCrowdsale** has the following properties
+  * Ability to specify `rate` and `preSaleRate`rate from ETH to INX tokens
+    * These can be adjusted by _owner_ of the smart contract
+  * A flag to indicate whether the state of the crowdsale is `inPreSale` or not
+    * `publicSale` is a one-time only call that moves the contract from pre-sale to public sale  
+  * Ability to specify `minContribution` per address
+    * This can be adjusted by _owner_ of the smart contract
+  * Ability to define a `openingTime` and `closingTime` for the token sale - tokens cannot be bought until the ICO opens (or after close)
+    * Close date can be adjusted by _owner_ of the smart contract
+  * Ability to contribute with ETH and receive the corresponding rate of minted INX tokens
+  * Ability to manage a `kyc` address list for contributors who are permitted to participate in the token sale
+    * If the sender of a transaction is not in the `kyc` list the transaction is rejected
+    * A third party solution is used for formal KYC/AML approval, the contract can be updated with approved accounts
   * The crowdsale is **pausable** which can stop any more contributors from participating in case of error, fault etc
+  * Manages a `inxWhitelist` of approved accounts that can add and remove accounts from the `kyc` address list
 
-### Deployment Order
+## Deployment
 
 _see `migrations` folder for a more details_
 
@@ -38,7 +43,7 @@ _see `migrations` folder for a more details_
   * Whitelist the crowdsale account so they can receive tokens e.g. `token.addAddressToWhitelist(INXCrowdsale.address)`
  
 
-## Installation
+## Local Installation & Testing
 
 1. Install [Truffle](http://truffleframework.com) and [NodeJs](https://nodejs.org/en/) (version 8 upwards)
 ```bash
