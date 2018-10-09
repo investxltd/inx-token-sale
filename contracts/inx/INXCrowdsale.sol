@@ -12,7 +12,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   mapping(address => uint256) public contributions;
 
   // FIXME arbitrarily set
-  uint256 public openingTime = block.timestamp.add(30 minutes);
+  uint256 public openingTime = block.timestamp.add(60 minutes);
 
   // FIXME arbitrarily set
   uint256 public closingTime = openingTime.add(8 days);
