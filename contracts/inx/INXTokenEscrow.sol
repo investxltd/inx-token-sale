@@ -38,6 +38,7 @@ contract INXTokenEscrow is Pausable {
     );
 
     constructor(uint256 _rate) public  {
+        rate = _rate;
         require(_rate > 0, "Rate must not be zero");
     }
 
