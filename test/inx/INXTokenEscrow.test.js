@@ -5,6 +5,7 @@ const increaseTimeTo = require('../helpers/increaseTime').increaseTimeTo;
 const duration = require('../helpers/increaseTime').duration;
 const latestTime = require('../helpers/latestTime');
 const etherToWei = require('../helpers/etherToWei');
+const weiToEther = require('../helpers/weiToEther');
 
 const INXTokenEscrow = artifacts.require('INXTokenEscrow');
 const INXCrowdsale = artifacts.require('INXCrowdsale');
@@ -243,6 +244,34 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
         it('should allow if exactly min limit', async function () {
             await this.tokenEscrow.sendTransaction({value: value, from: recipient}).should.be.fulfilled;
             await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient}).should.be.fulfilled;
+        });
+    });
+
+    describe.only('refund from owner', function () {
+        it('should return all wei', async function () {
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+
+            let tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            tokenBalance.should.be.bignumber.equal(rate * value);
+
+            let weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
+            weiBalance.should.be.bignumber.equal(value);
+
+            const post = web3.eth.getBalance(recipient);
+
+            await this.tokenEscrow.sendRefund(recipient, {from: owner});
+
+            tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            tokenBalance.should.be.bignumber.equal(0);
+
+            weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
+            weiBalance.should.be.bignumber.equal(0);
+
+            const postRefund = web3.eth.getBalance(recipient);
+
+            // you have the exact amount back you put in
+            postRefund.minus(post).should.be.bignumber.equal(value);
         });
     });
 });

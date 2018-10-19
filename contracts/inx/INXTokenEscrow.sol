@@ -44,6 +44,19 @@ contract INXTokenEscrow is Pausable {
     }
 
     /**
+    * @dev Sends a full refund of wei and reset committed tokens to zero
+    * @param _sender The address to query the the balance of.
+    */
+    function sendRefund(address _sender) external onlyOwner {
+        delete tokenBalances[_sender];
+
+        uint256 weiCommitted = weiBalances[_sender];
+        delete weiBalances[_sender];
+
+        _sender.transfer(weiCommitted);
+    }
+
+    /**
      * @dev captures a commitment to buy tokens at a fixed rate
      */
     function commitToBuyTokens() public payable whenNotPaused {
@@ -89,4 +102,7 @@ contract INXTokenEscrow is Pausable {
     function weiBalanceOf(address _owner) public view returns (uint256) {
         return weiBalances[_owner];
     }
+
+    // TODO redeem commitment to INX via Token (and send eth to wallet)
+
 }
