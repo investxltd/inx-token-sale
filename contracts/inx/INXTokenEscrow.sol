@@ -19,9 +19,6 @@ contract INXTokenEscrow is Pausable {
     // Amount of wei committed
     uint256 public weiCommitted;
 
-    // minimum contribution in wei - this can change
-    uint256 public minContribution = 0.2 ether;
-
     /**
      * Event for token commitment logging
      * @param sender who paid for the tokens
@@ -52,6 +49,8 @@ contract INXTokenEscrow is Pausable {
     function commitToBuyTokens() public payable whenNotPaused {
 
         uint256 weiAmount = msg.value;
+        uint256 minContribution = crowdsale.minContribution();
+        require(weiAmount >= minContribution, "Commitment value below minimum");
 
         // pull the current rate from the crowdsale
         uint256 rate = crowdsale.rate();
@@ -71,16 +70,6 @@ contract INXTokenEscrow is Pausable {
             rate,
             tokens
         );
-    }
-
-    /**
-     * @dev Owner can set the minimum contribution. This will change from pre-sale to public.
-     * @param _minContribution amount of min contribution
-     */
-    function setMinContribution(uint256 _minContribution) external onlyOwner {
-        require(_minContribution > 0, "Minimum contribution must not be zero");
-
-        minContribution = _minContribution;
     }
 
     /**

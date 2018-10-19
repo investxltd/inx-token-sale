@@ -20,7 +20,7 @@ const should = require('chai')
 contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
 
     let rate;
-    const value = 100;
+    let value;
 
     beforeEach(async function () {
         this.token = await INXToken.new({from: owner});
@@ -30,17 +30,14 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
         rate = (await this.crowdsale.rate()).toNumber();
         rate.should.be.equal(100);
+
+        value = (await this.crowdsale.minContribution()).toNumber();
     });
 
     describe('contract setup', function () {
         it('should have wei commitment value', async function () {
-            let contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
             contractWeiCommitted.should.be.bignumber.equal(0);
-        });
-
-        it('should have a min contribution', async function () {
-            let contractMinContribution = await this.tokenEscrow.minContribution();
-            contractMinContribution.should.be.bignumber.equal(etherToWei(0.2));
         });
 
         describe('when the requested account has no token balance', function () {
@@ -85,6 +82,108 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
         });
     });
 
+    describe('Pausable', function () {
+
+        it('should not allow commitment when paused', async function () {
+            await this.tokenEscrow.pause({from: owner});
+            let contractPaused = await this.tokenEscrow.paused.call();
+            contractPaused.should.equal(true);
+
+            await assertRevert(this.tokenEscrow.commitToBuyTokens({value: value, from: recipient}));
+        });
+
+        it('should allow transfer when unpaused', async function () {
+            await this.tokenEscrow.pause({from: owner});
+            await this.tokenEscrow.unpause({from: owner});
+
+            let contractPaused = await this.tokenEscrow.paused.call();
+            contractPaused.should.equal(false);
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient}).should.be.fulfilled;
+        });
+
+
+        describe('pause', function () {
+            describe('when the sender is the token owner', function () {
+                const from = owner;
+
+                describe('when the token is unpaused', function () {
+                    it('pauses the token', async function () {
+                        await this.tokenEscrow.pause({from});
+
+                        const paused = await this.tokenEscrow.paused();
+                        assert.equal(paused, true);
+                    });
+
+                    it('emits a paused event', async function () {
+                        const {logs} = await this.tokenEscrow.pause({from});
+
+                        assert.equal(logs.length, 1);
+                        assert.equal(logs[0].event, 'Pause');
+                    });
+                });
+
+                describe('when the token is paused', function () {
+                    beforeEach(async function () {
+                        await this.tokenEscrow.pause({from});
+                    });
+
+                    it('reverts', async function () {
+                        await assertRevert(this.tokenEscrow.pause({from}));
+                    });
+                });
+            });
+
+            describe('when the sender is not the token owner', function () {
+                const from = recipient;
+
+                it('reverts', async function () {
+                    await assertRevert(this.tokenEscrow.pause({from}));
+                });
+            });
+        });
+
+        describe('unpause', function () {
+            describe('when the sender is the token owner', function () {
+                const from = owner;
+
+                describe('when the token is paused', function () {
+                    beforeEach(async function () {
+                        await this.tokenEscrow.pause({from});
+                    });
+
+                    it('unpauses the token', async function () {
+                        await this.tokenEscrow.unpause({from});
+
+                        const paused = await this.tokenEscrow.paused();
+                        assert.equal(paused, false);
+                    });
+
+                    it('emits an unpaused event', async function () {
+                        const {logs} = await this.tokenEscrow.unpause({from});
+
+                        assert.equal(logs.length, 1);
+                        assert.equal(logs[0].event, 'Unpause');
+                    });
+                });
+
+                describe('when the token is unpaused', function () {
+                    it('reverts', async function () {
+                        await assertRevert(this.tokenEscrow.unpause({from}));
+                    });
+                });
+            });
+
+            describe('when the sender is not the token owner', function () {
+                const from = recipient;
+
+                it('reverts', async function () {
+                    await assertRevert(this.tokenEscrow.unpause({from}));
+                });
+            });
+        });
+    });
+
     describe('commitment via commitToBuyTokens', function () {
 
         it('should log commitment', async function () {
@@ -104,6 +203,9 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
             weiBalance.should.be.bignumber.equal(value);
+
+            const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            contractWeiCommitted.should.be.bignumber.equal(value);
         });
     });
 
@@ -126,6 +228,21 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
             weiBalance.should.be.bignumber.equal(value);
+
+            const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            contractWeiCommitted.should.be.bignumber.equal(value);
+        });
+    });
+
+    describe('sending minimum commitment', function () {
+        it('should fail if below limit', async function () {
+            await assertRevert(this.tokenEscrow.sendTransaction({value: 1, from: recipient}));
+            await assertRevert(this.tokenEscrow.commitToBuyTokens({value: 1, from: recipient}));
+        });
+
+        it('should allow if exactly min limit', async function () {
+            await this.tokenEscrow.sendTransaction({value: value, from: recipient}).should.be.fulfilled;
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient}).should.be.fulfilled;
         });
     });
 });
