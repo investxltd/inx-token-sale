@@ -4,37 +4,59 @@ const expectEvent = require('../helpers/expectEvent');
 const increaseTimeTo = require('../helpers/increaseTime').increaseTimeTo;
 const duration = require('../helpers/increaseTime').duration;
 const latestTime = require('../helpers/latestTime');
+const etherToWei = require('../helpers/etherToWei');
 
 const INXTokenEscrow = artifacts.require('INXTokenEscrow');
+const INXCrowdsale = artifacts.require('INXCrowdsale');
+const INXToken = artifacts.require('INXToken');
 
 const BigNumber = web3.BigNumber;
 
-require('chai')
+const should = require('chai')
     .use(require('chai-as-promised'))
     .use(require('chai-bignumber')(BigNumber))
     .should();
 
 contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
 
-    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-    const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
-    const DECIMALS = 18;
-
-    const rate = 1;
+    let rate;
+    const value = 100;
 
     beforeEach(async function () {
-        this.tokenEscrow = await INXTokenEscrow.new(rate, {from: owner});
+        this.token = await INXToken.new({from: owner});
+        this.crowdsale = await INXCrowdsale.new(owner, this.token.address, 100, 200, {from: owner});
+
+        this.tokenEscrow = await INXTokenEscrow.new(this.crowdsale.address, {from: owner});
+
+        rate = (await this.crowdsale.rate()).toNumber();
+        rate.should.be.equal(100);
     });
 
     describe('contract setup', function () {
-        it('should have an rate', async function () {
-            let contractRate = await this.tokenEscrow.rate();
-            contractRate.should.be.bignumber.equal(rate);
+        it('should have wei commitment value', async function () {
+            let contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            contractWeiCommitted.should.be.bignumber.equal(0);
         });
 
-        it('should have wei commitment value', async function () {
-            let contractWeiRaised = await this.tokenEscrow.weiRaised();
-            contractWeiRaised.should.be.bignumber.equal(0);
+        it('should have a min contribution', async function () {
+            let contractMinContribution = await this.tokenEscrow.minContribution();
+            contractMinContribution.should.be.bignumber.equal(etherToWei(0.2));
+        });
+
+        describe('when the requested account has no token balance', function () {
+            it('returns zero', async function () {
+                const balance = await this.tokenEscrow.tokenBalanceOf(anotherAccount);
+
+                balance.should.be.bignumber.equal(0);
+            });
+        });
+
+        describe('when the requested account has no wei balance', function () {
+            it('returns zero', async function () {
+                const balance = await this.tokenEscrow.weiBalanceOf(anotherAccount);
+
+                balance.should.be.bignumber.equal(0);
+            });
         });
     });
 
@@ -63,21 +85,47 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
         });
     });
 
-    describe('tokenBalanceOf', function () {
-        describe('when the requested account has no token balance', function () {
-            it('returns zero', async function () {
-                const balance = await this.tokenEscrow.tokenBalanceOf(anotherAccount);
+    describe('commitment via commitToBuyTokens', function () {
 
-                balance.should.be.bignumber.equal(0);
-            });
+        it('should log commitment', async function () {
+            const {logs} = await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+            const event = logs.find(e => e.event === 'TokenCommitment');
+            should.exist(event);
+            event.args.sender.should.equal(recipient);
+            event.args.value.should.be.bignumber.equal(value);
+            event.args.rate.should.be.bignumber.equal(rate);
+            event.args.amount.should.be.bignumber.equal(rate * value);
         });
 
-        // describe('when the requested account has some tokens', function () {
-        //   it('returns the total amount of tokens', async function () {
-        //     const balance = await this.token.balanceOf(owner);
-        //
-        //     balance.should.be.bignumber.equal(TOTAl_AMOUNT_OF_TOKENS);
-        //   });
-        // });
+        it('should assign tokens to beneficiary', async function () {
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+            const tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            tokenBalance.should.be.bignumber.equal(rate * value);
+
+            const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
+            weiBalance.should.be.bignumber.equal(value);
+        });
+    });
+
+    describe('commitment via default function', function () {
+
+        it('should log commitment', async function () {
+            const {logs} = await this.tokenEscrow.sendTransaction({value: value, from: recipient});
+            const event = logs.find(e => e.event === 'TokenCommitment');
+            should.exist(event);
+            event.args.sender.should.equal(recipient);
+            event.args.value.should.be.bignumber.equal(value);
+            event.args.rate.should.be.bignumber.equal(rate);
+            event.args.amount.should.be.bignumber.equal(rate * value);
+        });
+
+        it('should assign tokens to beneficiary', async function () {
+            await this.tokenEscrow.sendTransaction({value: value, from: recipient});
+            const tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            tokenBalance.should.be.bignumber.equal(rate * value);
+
+            const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
+            weiBalance.should.be.bignumber.equal(value);
+        });
     });
 });
