@@ -47,13 +47,31 @@ contract INXTokenEscrow is Pausable {
     * @dev Sends a full refund of wei and reset committed tokens to zero
     * @param _sender The address to query the the balance of.
     */
-    function sendRefund(address _sender) external onlyOwner {
+    function sendRefund(address _sender) external onlyOwner returns (bool) {
         delete tokenBalances[_sender];
 
         uint256 weiCommitted = weiBalances[_sender];
         delete weiBalances[_sender];
 
         _sender.transfer(weiCommitted);
+
+        return true;
+    }
+
+    /**
+    * @dev if the _sender has a balance and has been KYC then credits the account with balance
+    * @param _sender The address to query the the balance of.
+    */
+    function redeem(address _sender) external returns (bool) {
+        uint256 tokenBalance = tokenBalances[_sender];
+        delete tokenBalances[_sender];
+
+        uint256 weiCommitted = weiBalances[_sender];
+        delete weiBalances[_sender];
+
+        require(tokenBalance > 0, "Token balance must be positive");
+
+        return true;
     }
 
     /**
