@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 const assertRevert = require('../helpers/assertRevert');
+const assertRevertMessage = require('../helpers/assertRevertMessage');
 const expectEvent = require('../helpers/expectEvent');
 const increaseTimeTo = require('../helpers/increaseTime').increaseTimeTo;
 const duration = require('../helpers/increaseTime').duration;
@@ -11,11 +12,10 @@ const INXTokenEscrow = artifacts.require('INXTokenEscrow');
 const INXCrowdsale = artifacts.require('INXCrowdsale');
 const INXToken = artifacts.require('INXToken');
 
-const BigNumber = web3.BigNumber;
+const BN = web3.utils.BN;
 
 const should = require('chai')
     .use(require('chai-as-promised'))
-    .use(require('chai-bignumber')(BigNumber))
     .should();
 
 contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
@@ -23,29 +23,32 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
     let rate;
     let value;
 
+    const assertZero = (bn) => bn.toString(10).should.be.equal('0');
+    const assertBN = (result, expected) => result.toString(10).should.be.equal(expected.toString(10));
+
     beforeEach(async function () {
         this.token = await INXToken.new({from: owner});
         this.crowdsale = await INXCrowdsale.new(owner, this.token.address, 100, 200, {from: owner});
 
         this.tokenEscrow = await INXTokenEscrow.new(this.crowdsale.address, {from: owner});
 
-        rate = (await this.crowdsale.rate()).toNumber();
-        rate.should.be.equal(100);
+        rate = await this.crowdsale.rate();
+        rate.toString(10).should.be.equal('100');
 
-        value = (await this.crowdsale.minContribution()).toNumber();
+        value = await this.crowdsale.minContribution();
     });
 
     describe('contract setup', function () {
         it('should have wei commitment value', async function () {
             const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
-            contractWeiCommitted.should.be.bignumber.equal(0);
+            assertZero(contractWeiCommitted);
         });
 
         describe('when the requested account has no token balance', function () {
             it('returns zero', async function () {
                 const balance = await this.tokenEscrow.tokenBalanceOf(anotherAccount);
 
-                balance.should.be.bignumber.equal(0);
+                assertZero(balance);
             });
         });
 
@@ -53,7 +56,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             it('returns zero', async function () {
                 const balance = await this.tokenEscrow.weiBalanceOf(anotherAccount);
 
-                balance.should.be.bignumber.equal(0);
+                assertZero(balance);
             });
         });
     });
@@ -102,7 +105,6 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient}).should.be.fulfilled;
         });
-
 
         describe('pause', function () {
             describe('when the sender is the token owner', function () {
@@ -192,21 +194,21 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             const event = logs.find(e => e.event === 'TokenCommitment');
             should.exist(event);
             event.args.sender.should.equal(recipient);
-            event.args.value.should.be.bignumber.equal(value);
-            event.args.rate.should.be.bignumber.equal(rate);
-            event.args.amount.should.be.bignumber.equal(rate * value);
+            assertBN(event.args.value, value);
+            assertBN(event.args.rate, rate);
+            assertBN(event.args.amount, rate.mul(value));
         });
 
         it('should assign tokens to beneficiary', async function () {
             await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
             const tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
-            tokenBalance.should.be.bignumber.equal(rate * value);
+            assertBN(tokenBalance, rate.mul(value));
 
             const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
-            weiBalance.should.be.bignumber.equal(value);
+            assertBN(weiBalance, value);
 
             const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
-            contractWeiCommitted.should.be.bignumber.equal(value);
+            assertBN(contractWeiCommitted, value);
         });
     });
 
@@ -217,21 +219,21 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             const event = logs.find(e => e.event === 'TokenCommitment');
             should.exist(event);
             event.args.sender.should.equal(recipient);
-            event.args.value.should.be.bignumber.equal(value);
-            event.args.rate.should.be.bignumber.equal(rate);
-            event.args.amount.should.be.bignumber.equal(rate * value);
+            assertBN(event.args.value, value);
+            assertBN(event.args.rate, rate);
+            assertBN(event.args.amount, rate.mul(value));
         });
 
         it('should assign tokens to beneficiary', async function () {
             await this.tokenEscrow.sendTransaction({value: value, from: recipient});
             const tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
-            tokenBalance.should.be.bignumber.equal(rate * value);
+            assertBN(tokenBalance, rate.mul(value));
 
             const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
-            weiBalance.should.be.bignumber.equal(value);
+            assertBN(weiBalance, value);
 
             const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
-            contractWeiCommitted.should.be.bignumber.equal(value);
+            assertBN(contractWeiCommitted, value);
         });
     });
 
@@ -247,31 +249,65 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
         });
     });
 
-    describe.only('refund from owner', function () {
+    describe('refund from owner', function () {
         it('should return all wei', async function () {
 
             await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
 
             let tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
-            tokenBalance.should.be.bignumber.equal(rate * value);
+            assertBN(tokenBalance, rate.mul(value));
 
             let weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
-            weiBalance.should.be.bignumber.equal(value);
+            assertBN(weiBalance, value);
 
-            const post = web3.eth.getBalance(recipient);
+            let post = new BN(await web3.eth.getBalance(recipient));
 
             await this.tokenEscrow.sendRefund(recipient, {from: owner});
 
             tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
-            tokenBalance.should.be.bignumber.equal(0);
+            assertZero(tokenBalance);
 
             weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
-            weiBalance.should.be.bignumber.equal(0);
+            assertZero(weiBalance);
 
-            const postRefund = web3.eth.getBalance(recipient);
+            let postRefund = new BN(await web3.eth.getBalance(recipient));
 
             // you have the exact amount back you put in
-            postRefund.minus(post).should.be.bignumber.equal(value);
+            assertBN(postRefund.sub(post), value);
+        });
+    });
+
+    describe.only('redeem commitment for INX token', function () {
+        it('revert if non-positive token balances', async function () {
+            await assertRevertMessage(
+                this.tokenEscrow.redeem(recipient, {from: recipient}),
+                'Balances must be positive'
+            );
+        });
+
+        it('revert if not KYC passed', async function () {
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+
+            await assertRevertMessage(
+                this.tokenEscrow.redeem(recipient, {from: recipient}),
+                'Sender must have passed KYC'
+            );
+        });
+
+        it('redeem for INX tokens', async function () {
+
+            await this.crowdsale.addToKyc(recipient, {from: owner});
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+
+            let walletBalancePreRedeem = new BN(await web3.eth.getBalance(owner));
+
+            await this.tokenEscrow.redeem(recipient, {from: recipient});
+
+            let walletBalancePostRedeem = new BN(await web3.eth.getBalance(owner));
+
+            assertBN(walletBalancePostRedeem.sub(walletBalancePreRedeem), value);
         });
     });
 });

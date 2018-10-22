@@ -4,7 +4,7 @@ const advanceBlock = require('../helpers/advanceToBlock');
 const increaseTimeTo = require('../helpers/increaseTime').increaseTimeTo;
 const duration = require('../helpers/increaseTime').duration;
 
-const BigNumber = web3.BigNumber;
+const BigNumber = web3.utils.BN;
 
 const should = require('chai')
   .use(require('chai-as-promised'))

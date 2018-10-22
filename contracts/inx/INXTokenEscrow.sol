@@ -69,7 +69,16 @@ contract INXTokenEscrow is Pausable {
         uint256 weiCommitted = weiBalances[_sender];
         delete weiBalances[_sender];
 
-        require(tokenBalance > 0, "Token balance must be positive");
+        require(tokenBalance > 0 && weiCommitted > 0, "Balances must be positive");
+
+        bool kyc = crowdsale.kyc(_sender);
+        require(kyc, "Sender must have passed KYC");
+
+        address wallet = crowdsale.wallet();
+        wallet.transfer(weiCommitted);
+
+        // mint INXTokens
+
 
         return true;
     }

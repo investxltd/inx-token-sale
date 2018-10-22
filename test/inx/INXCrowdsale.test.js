@@ -7,7 +7,7 @@ const duration = require('../helpers/increaseTime').duration;
 const latestTime = require('../helpers/latestTime');
 const EVMRevert = require('../helpers/EVMRevert');
 
-const BigNumber = web3.BigNumber;
+const BigNumber = web3.utils.BN;
 
 const should = require('chai')
   .use(require('chai-as-promised'))

@@ -1,17 +1,18 @@
 const {expectThrow} = require('../helpers/expectThrow');
 const {ethSendTransaction, ethGetBalance} = require('../helpers/web3');
+const etherToWei = require('../helpers/etherToWei');
 
 const INXToken = artifacts.require('INXToken');
 const ForceEther = artifacts.require('ForceEther');
 
-const BigNumber = web3.BigNumber;
+const BigNumber = web3.utils.BN;
 
 require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
 contract('INXToken HasNoEther', function ([_, owner, anyone]) {
-  const amount = web3.toWei('1', 'ether');
+  const amount = etherToWei('1');
 
   beforeEach(async function () {
     this.hasNoEther = await INXToken.new({from: owner});
