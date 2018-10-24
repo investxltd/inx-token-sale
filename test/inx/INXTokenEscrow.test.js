@@ -316,6 +316,12 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
 
+            let escrowTokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            assertBN(escrowTokenBalance, rate.mul(value));
+
+            let inxBalance = await this.token.balanceOf(recipient, {from: recipient});
+            assertZero(inxBalance);
+
             let walletBalancePreRedeem = new BN(await web3.eth.getBalance(owner));
 
             await this.tokenEscrow.redeem(recipient, {from: recipient});
@@ -325,9 +331,13 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             // Investx's wallet of eth should have the value
             assertBN(walletBalancePostRedeem.sub(walletBalancePreRedeem), value);
 
-            // recipient should now have INX tokens
-            let inxBalance = await this.token.balanceOf(recipient, {from: recipient});
+            escrowTokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            assertZero(escrowTokenBalance);
+
+            inxBalance = await this.token.balanceOf(recipient, {from: recipient});
             assertBN(inxBalance, rate.mul(value));
+
+
         });
     });
 });
