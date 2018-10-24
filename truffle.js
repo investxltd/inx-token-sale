@@ -13,10 +13,15 @@ module.exports = {
         //     gasPrice: 5
         // }
     },
-    solc: {
-        optimizer: {
-            enabled: true,
-            runs: 200,
+    compilers: {
+        solc: {
+            version: "0.4.25", // ex:  "0.4.20". (Default: Truffle's installed solc)
+            settings: {
+                optimizer: {
+                    enabled: true,
+                    runs: 1000,
+                }
+            },
         }
     },
     networks: {
