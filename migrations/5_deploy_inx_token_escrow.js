@@ -1,10 +1,8 @@
 /* global web3:true */
 const INXCrowdsale = artifacts.require('INXCrowdsale');
+const INXToken = artifacts.require('INXToken');
 const INXTokenEscrow = artifacts.require('INXTokenEscrow');
 
 module.exports = function (deployer, network, accounts) {
-
-    console.log(`Running within network = ${network}`);
-
-    deployer.deploy(INXTokenEscrow, INXCrowdsale.address)
+    deployer.deploy(INXTokenEscrow, INXCrowdsale.address, INXToken.address)
 };

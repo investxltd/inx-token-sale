@@ -28,12 +28,13 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
     beforeEach(async function () {
         this.token = await INXToken.new({from: owner});
+
         this.crowdsale = await INXCrowdsale.new(owner, this.token.address, 100, 200, {from: owner});
 
-        this.tokenEscrow = await INXTokenEscrow.new(this.crowdsale.address, {from: owner});
+        this.tokenEscrow = await INXTokenEscrow.new(this.crowdsale.address, this.token.address, {from: owner});
 
         rate = await this.crowdsale.rate();
-        rate.toString(10).should.be.equal('100');
+        assertBN(rate, new BN('100'));
 
         value = await this.crowdsale.minContribution();
     });
@@ -277,7 +278,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
         });
     });
 
-    describe.only('redeem commitment for INX token', function () {
+    describe('redeem commitment for INX token', function () {
         it('revert if non-positive token balances', async function () {
             await assertRevertMessage(
                 this.tokenEscrow.redeem(recipient, {from: recipient}),
@@ -295,7 +296,21 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             );
         });
 
+        it('revert if escrow is not whitelisted to mint tokens', async function () {
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+
+            await this.crowdsale.addToKyc(recipient, {from: owner});
+
+            await assertRevert(
+                this.tokenEscrow.redeem(recipient, {from: recipient}),
+            );
+        });
+
         it('redeem for INX tokens', async function () {
+
+            // ensure the escrow contract can mint INX
+            await this.token.addAddressToWhitelist(this.tokenEscrow.address, {from: owner});
 
             await this.crowdsale.addToKyc(recipient, {from: owner});
 
@@ -307,7 +322,12 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             let walletBalancePostRedeem = new BN(await web3.eth.getBalance(owner));
 
+            // Investx's wallet of eth should have the value
             assertBN(walletBalancePostRedeem.sub(walletBalancePreRedeem), value);
+
+            // recipient should now have INX tokens
+            let inxBalance = await this.token.balanceOf(recipient, {from: recipient});
+            assertBN(inxBalance, rate.mul(value));
         });
     });
 });

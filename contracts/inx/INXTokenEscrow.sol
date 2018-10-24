@@ -4,6 +4,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 import "./INXCrowdsale.sol";
+import "./INXToken.sol";
 
 /**
  * @title INXEscrow to be used to take contributions an lock in rates to be redeemed in the crowdsale
@@ -15,6 +16,7 @@ contract INXTokenEscrow is Pausable {
     mapping(address => uint256) internal weiBalances;
 
     INXCrowdsale crowdsale;
+    INXToken token;
 
     // Amount of wei committed
     uint256 public weiCommitted;
@@ -32,8 +34,9 @@ contract INXTokenEscrow is Pausable {
         uint256 amount
     );
 
-    constructor(INXCrowdsale _crowdsale) public  {
+    constructor(INXCrowdsale _crowdsale, INXToken _token) public  {
         crowdsale = _crowdsale;
+        token = _token;
     }
 
     /**
@@ -77,8 +80,7 @@ contract INXTokenEscrow is Pausable {
         address wallet = crowdsale.wallet();
         wallet.transfer(weiCommitted);
 
-        // mint INXTokens
-
+        token.mint(_sender, tokenBalance);
 
         return true;
     }
@@ -129,7 +131,4 @@ contract INXTokenEscrow is Pausable {
     function weiBalanceOf(address _owner) public view returns (uint256) {
         return weiBalances[_owner];
     }
-
-    // TODO redeem commitment to INX via Token (and send eth to wallet)
-
 }
