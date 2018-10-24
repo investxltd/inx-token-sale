@@ -18,7 +18,7 @@ const should = require('chai')
 const INXCrowdsale = artifacts.require('INXCrowdsale');
 const INXToken = artifacts.require('INXToken');
 
-contract.only('INXCrowdsale', function ([owner, investor, wallet, purchaser, authorized, unauthorized, anotherAuthorized, authorizedTwo, authorizedThree, authorizedFour, authorizedFive]) {
+contract('INXCrowdsale', function ([owner, investor, wallet, purchaser, authorized, unauthorized, anotherAuthorized, authorizedTwo, authorizedThree, authorizedFour, authorizedFive]) {
 
 
     const assertZero = (bn) => bn.toString(10).should.be.equal('0');
@@ -849,7 +849,7 @@ contract.only('INXCrowdsale', function ([owner, investor, wallet, purchaser, aut
         });
     });
 
-    describe.only('Current rate', function () {
+    describe('Current rate', function () {
         it('should return presale rate as current rate when in presale', async function () {
             let preSaleRate = await this.crowdsale.preSaleRate();
             assertBN(preSaleRate, new BN('2'));

@@ -133,7 +133,7 @@ contract INXTokenEscrow is Pausable {
         require(weiAmount >= minContribution, "Commitment value below minimum");
 
         // pull the current rate from the crowdsale
-        uint256 rate = crowdsale.rate();
+        uint256 rate = crowdsale.getCurrentRate();
 
         // calculate token amount to be committed
         uint256 tokens = weiAmount.mul(rate);

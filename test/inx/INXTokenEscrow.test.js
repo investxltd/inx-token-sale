@@ -18,7 +18,7 @@ const should = require('chai')
     .use(require('chai-as-promised'))
     .should();
 
-contract('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
+contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
 
     let rate;
     let value;
@@ -33,8 +33,8 @@ contract('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extra
 
         this.tokenEscrow = await INXTokenEscrow.new(this.crowdsale.address, this.token.address, {from: owner});
 
-        rate = await this.crowdsale.rate();
-        assertBN(rate, new BN('100'));
+        rate = await this.crowdsale.getCurrentRate();
+        assertBN(rate, new BN('200'));
 
         value = await this.crowdsale.minContribution();
     });
