@@ -18,7 +18,7 @@ const should = require('chai')
     .use(require('chai-as-promised'))
     .should();
 
-contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
+contract('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, extraAccount]) {
 
     let rate;
     let value;

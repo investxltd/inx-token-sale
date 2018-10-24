@@ -87,6 +87,17 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   }
 
   /**
+   * @dev returns the current rate of the crowdsale
+   */
+  function getCurrentRate() public view returns (uint256) {
+    if (inPreSale) {
+      return preSaleRate;
+    }
+
+    return rate;
+  }
+
+  /**
    * @dev Checks whether the period in which the crowdsale is open has elapsed.
    * @return Whether crowdsale period is open
    */
