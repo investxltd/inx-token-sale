@@ -41,7 +41,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
     describe('contract setup', function () {
         it('should have wei commitment value', async function () {
-            const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
             assertZero(contractWeiCommitted);
         });
 
@@ -208,7 +208,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
             assertBN(weiBalance, value);
 
-            const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
             assertBN(contractWeiCommitted, value);
         });
     });
@@ -233,7 +233,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
             assertBN(weiBalance, value);
 
-            const contractWeiCommitted = await this.tokenEscrow.weiCommitted();
+            const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
             assertBN(contractWeiCommitted, value);
         });
     });

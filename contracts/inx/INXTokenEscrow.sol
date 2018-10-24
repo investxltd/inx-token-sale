@@ -19,7 +19,7 @@ contract INXTokenEscrow is Pausable {
     INXToken token;
 
     // Amount of wei committed
-    uint256 public weiCommitted;
+    uint256 public totalWeiCommitted;
 
     /**
      * Event for token commitment logging
@@ -139,7 +139,7 @@ contract INXTokenEscrow is Pausable {
         uint256 tokens = weiAmount.mul(rate);
 
         // update weiCommitted total
-        weiCommitted = weiCommitted.add(weiAmount);
+        totalWeiCommitted = totalWeiCommitted.add(weiAmount);
 
         tokenBalances[msg.sender] = tokenBalances[msg.sender].add(tokens);
         weiBalances[msg.sender] = weiBalances[msg.sender].add(weiAmount);
