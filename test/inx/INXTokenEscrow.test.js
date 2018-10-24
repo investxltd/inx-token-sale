@@ -263,7 +263,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             let post = new BN(await web3.eth.getBalance(recipient));
 
-            await this.tokenEscrow.sendRefund(recipient, {from: owner});
+            const {logs} = await this.tokenEscrow.sendRefund(recipient, {from: owner});
 
             tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
             assertZero(tokenBalance);
@@ -275,6 +275,12 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             // you have the exact amount back you put in
             assertBN(postRefund.sub(post), value);
+
+            const event = logs.find(e => e.event === 'CommitmentRefund');
+            should.exist(event);
+            event.args.sender.should.equal(recipient);
+            assertBN(event.args.value, value);
+            assertBN(event.args.amount, rate.mul(value));
         });
     });
 
@@ -324,7 +330,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
 
             let walletBalancePreRedeem = new BN(await web3.eth.getBalance(owner));
 
-            await this.tokenEscrow.redeem(recipient, {from: recipient});
+            const {logs} = await this.tokenEscrow.redeem(recipient, {from: recipient});
 
             let walletBalancePostRedeem = new BN(await web3.eth.getBalance(owner));
 
@@ -337,7 +343,11 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount, 
             inxBalance = await this.token.balanceOf(recipient, {from: recipient});
             assertBN(inxBalance, rate.mul(value));
 
-
+            const event = logs.find(e => e.event === 'CommitmentRedeem');
+            should.exist(event);
+            event.args.sender.should.equal(recipient);
+            assertBN(event.args.value, value);
+            assertBN(event.args.amount, rate.mul(value));
         });
     });
 });

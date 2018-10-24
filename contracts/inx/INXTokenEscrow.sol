@@ -25,12 +25,37 @@ contract INXTokenEscrow is Pausable {
      * Event for token commitment logging
      * @param sender who paid for the tokens
      * @param value weis paid for purchase
+     * @param rate of INX to wei
      * @param amount amount of tokens purchased
      */
     event TokenCommitment(
         address indexed sender,
         uint256 value,
         uint256 rate,
+        uint256 amount
+    );
+
+    /**
+     * Event for refund of a commitment
+     * @param sender who paid for the tokens
+     * @param value weis refunded
+     * @param amount amount of token balance removed
+     */
+    event CommitmentRefund(
+        address indexed sender,
+        uint256 value,
+        uint256 amount
+    );
+
+    /**
+     * Event for successful redemption of a commitment
+     * @param sender who paid for the tokens
+     * @param value weis refunded
+     * @param amount amount of token balance removed
+     */
+    event CommitmentRedeem(
+        address indexed sender,
+        uint256 value,
         uint256 amount
     );
 
@@ -51,12 +76,19 @@ contract INXTokenEscrow is Pausable {
     * @param _sender The address to query the the balance of.
     */
     function sendRefund(address _sender) external onlyOwner returns (bool) {
+        uint256 tokenBalance = tokenBalances[_sender];
         delete tokenBalances[_sender];
 
         uint256 weiCommitted = weiBalances[_sender];
         delete weiBalances[_sender];
 
         _sender.transfer(weiCommitted);
+
+        emit CommitmentRefund(
+            _sender,
+            weiCommitted,
+            tokenBalance
+        );
 
         return true;
     }
@@ -81,6 +113,12 @@ contract INXTokenEscrow is Pausable {
         wallet.transfer(weiCommitted);
 
         token.mint(_sender, tokenBalance);
+
+        emit CommitmentRedeem(
+            _sender,
+            weiCommitted,
+            tokenBalance
+        );
 
         return true;
     }
