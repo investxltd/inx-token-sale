@@ -213,7 +213,6 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
         });
 
         it('should assign tokens to beneficiary in public sale (with correct rate)', async function () {
-
             // move to public sale
             await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
 
@@ -229,6 +228,42 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
 
             const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
             assertBN(contractWeiCommitted, value);
+        });
+
+        it('should assign tokens to beneficiary in public sale (with correct rate)', async function () {
+            // move to public sale
+            await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
+
+            // reset the rate to public sale rate (setup using pre-sale by default)
+            rate = await this.crowdsale.getCurrentRate();
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+            const tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            assertBN(tokenBalance, rate.mul(value));
+
+            const weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
+            assertBN(weiBalance, value);
+
+            const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
+            assertBN(contractWeiCommitted, value);
+        });
+
+        it('should assign tokens to beneficiary in public sale and pre-sale (with correct rate)', async function () {
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+            const tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            assertBN(tokenBalance, rate.mul(value));
+
+            // move to public sale
+            await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
+
+            // reset the rate to public sale rate (setup using pre-sale by default)
+            rate = await this.crowdsale.getCurrentRate();
+
+            await this.tokenEscrow.commitToBuyTokens({value: value, from: recipient});
+            const newTokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
+            const publicSaleTokens = rate.mul(value);
+            assertBN(newTokenBalance, publicSaleTokens.add(tokenBalance));
         });
     });
 
