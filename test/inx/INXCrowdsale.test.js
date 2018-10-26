@@ -24,7 +24,6 @@ contract('INXCrowdsale', function ([owner, investor, wallet, purchaser, authoriz
     const assertZero = (bn) => bn.toString(10).should.be.equal('0');
     const assertBN = (result, expected) => result.toString(10).should.be.equal(expected.toString(10));
 
-
     before(async function () {
         // Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
         await advanceBlock();

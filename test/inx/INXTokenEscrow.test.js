@@ -7,6 +7,8 @@ const duration = require('../helpers/increaseTime').duration;
 const latestTime = require('../helpers/latestTime');
 const etherToWei = require('../helpers/etherToWei');
 const weiToEther = require('../helpers/weiToEther');
+const assertBN = require('../helpers/assertBN');
+const assertBNZero = require('../helpers/assertBNZero');
 
 const INXTokenEscrow = artifacts.require('INXTokenEscrow');
 const INXCrowdsale = artifacts.require('INXCrowdsale');
@@ -22,10 +24,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
 
     let rate;
     let value;
-
-    const assertZero = (bn) => bn.toString(10).should.be.equal('0');
-    const assertBN = (result, expected) => result.toString(10).should.be.equal(expected.toString(10));
-
+    
     beforeEach(async function () {
         this.token = await INXToken.new({from: owner});
 
@@ -42,14 +41,14 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
     describe('contract setup', function () {
         it('should have wei commitment value', async function () {
             const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
-            assertZero(contractWeiCommitted);
+            assertBNZero(contractWeiCommitted);
         });
 
         describe('when the requested account has no token balance', function () {
             it('returns zero', async function () {
                 const balance = await this.tokenEscrow.tokenBalanceOf(anotherAccount);
 
-                assertZero(balance);
+                assertBNZero(balance);
             });
         });
 
@@ -57,7 +56,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
             it('returns zero', async function () {
                 const balance = await this.tokenEscrow.weiBalanceOf(anotherAccount);
 
-                assertZero(balance);
+                assertBNZero(balance);
             });
         });
     });
@@ -320,10 +319,10 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
             const {logs} = await this.tokenEscrow.sendRefund(recipient, {from: owner});
 
             tokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
-            assertZero(tokenBalance);
+            assertBNZero(tokenBalance);
 
             weiBalance = await this.tokenEscrow.weiBalanceOf(recipient);
-            assertZero(weiBalance);
+            assertBNZero(weiBalance);
 
             let postRefund = new BN(await web3.eth.getBalance(recipient));
 
@@ -380,7 +379,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
             assertBN(escrowTokenBalance, rate.mul(value));
 
             let inxBalance = await this.token.balanceOf(recipient, {from: recipient});
-            assertZero(inxBalance);
+            assertBNZero(inxBalance);
 
             let walletBalancePreRedeem = new BN(await web3.eth.getBalance(owner));
 
@@ -392,7 +391,7 @@ contract.only('INXTokenEscrow', function ([_, owner, recipient, anotherAccount])
             assertBN(walletBalancePostRedeem.sub(walletBalancePreRedeem), value);
 
             escrowTokenBalance = await this.tokenEscrow.tokenBalanceOf(recipient);
-            assertZero(escrowTokenBalance);
+            assertBNZero(escrowTokenBalance);
 
             inxBalance = await this.token.balanceOf(recipient, {from: recipient});
             assertBN(inxBalance, rate.mul(value));
