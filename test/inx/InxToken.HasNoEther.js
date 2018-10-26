@@ -5,11 +5,12 @@ const etherToWei = require('../helpers/etherToWei');
 const INXToken = artifacts.require('INXToken');
 const ForceEther = artifacts.require('ForceEther');
 
-const BigNumber = web3.utils.BN;
+const BigNumber = web3.BigNumber;
 
-require('chai')
-  .use(require('chai-bignumber')(BigNumber))
-  .should();
+const should = require('chai')
+    .use(require('chai-as-promised'))
+    .use(require('chai-bignumber')(BigNumber))
+    .should();
 
 contract('INXToken HasNoEther', function ([_, owner, anyone]) {
   const amount = etherToWei('1');
@@ -40,7 +41,7 @@ contract('INXToken HasNoEther', function ([_, owner, anyone]) {
     const forceEther = await ForceEther.new({value: amount});
     await forceEther.destroyAndSend(this.hasNoEther.address);
     const forcedBalance = await ethGetBalance(this.hasNoEther.address);
-    assert.equal(forcedBalance, amount);
+    assert.equal(forcedBalance.toString(), amount.toString());
 
     // Reclaim
     const ownerStartBalance = await ethGetBalance(owner);
@@ -57,7 +58,7 @@ contract('INXToken HasNoEther', function ([_, owner, anyone]) {
     const forceEther = await ForceEther.new({value: amount});
     await forceEther.destroyAndSend(this.hasNoEther.address);
     const forcedBalance = await ethGetBalance(this.hasNoEther.address);
-    assert.equal(forcedBalance, amount);
+    assert.equal(forcedBalance.toString(), amount.toString());
 
     // Reclaim
     await expectThrow(this.hasNoEther.reclaimEther({from: anyone}));

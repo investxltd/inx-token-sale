@@ -7,8 +7,7 @@ const duration = require('../helpers/increaseTime').duration;
 const latestTime = require('../helpers/latestTime');
 const EVMRevert = require('../helpers/EVMRevert');
 
-const BigNumber = web3.utils.BN;
-const BN = web3.utils.BN;
+const BigNumber = web3.BigNumber;
 
 const should = require('chai')
     .use(require('chai-as-promised'))
@@ -19,10 +18,6 @@ const INXCrowdsale = artifacts.require('INXCrowdsale');
 const INXToken = artifacts.require('INXToken');
 
 contract('INXCrowdsale', function ([owner, investor, wallet, purchaser, authorized, unauthorized, anotherAuthorized, authorizedTwo, authorizedThree, authorizedFour, authorizedFive]) {
-
-
-    const assertZero = (bn) => bn.toString(10).should.be.equal('0');
-    const assertBN = (result, expected) => result.toString(10).should.be.equal(expected.toString(10));
 
     before(async function () {
         // Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
@@ -851,14 +846,14 @@ contract('INXCrowdsale', function ([owner, investor, wallet, purchaser, authoriz
     describe('Current rate', function () {
         it('should return presale rate as current rate when in presale', async function () {
             let preSaleRate = await this.crowdsale.preSaleRate();
-            assertBN(preSaleRate, new BN('2'));
+            preSaleRate.should.be.bignumber.equal('2');
 
             const inPreSale = await this.crowdsale.inPreSale();
             assert.isTrue(inPreSale);
 
             // current rate should be pre-sale rate
             const currentRate = await this.crowdsale.getCurrentRate().should.be.fulfilled;
-            assertBN(currentRate, preSaleRate);
+            currentRate.should.be.bignumber.equal(preSaleRate);
         });
 
         it('should return rate as current rate when in main sale', async function () {
@@ -866,14 +861,14 @@ contract('INXCrowdsale', function ([owner, investor, wallet, purchaser, authoriz
             await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
 
             let rate = await this.crowdsale.rate();
-            assertBN(rate, new BN('1'));
+            rate.should.be.bignumber.equal('1');
 
             const inPreSale = await this.crowdsale.inPreSale();
             assert.isFalse(inPreSale);
 
             // current rate should be pre-sale rate
             const currentRate = await this.crowdsale.getCurrentRate().should.be.fulfilled;
-            assertBN(currentRate, rate);
+            currentRate.should.be.bignumber.equal(rate);
         });
     });
 });

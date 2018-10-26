@@ -7,9 +7,9 @@ const latestTime = require('../helpers/latestTime');
 
 const INXToken = artifacts.require('INXToken');
 
-const BigNumber = web3.utils.BN;
+const BigNumber = web3.BigNumber;
 
-require('chai')
+const should = require('chai')
     .use(require('chai-as-promised'))
     .use(require('chai-bignumber')(BigNumber))
     .should();
@@ -974,7 +974,7 @@ contract('INXToken', function ([_, owner, recipient, anotherAccount, extraAccoun
                         const lockedUntil = await this.token.founderTokensLockedUntil();
 
                         // force time to move on to just after locked time - after 29th Feb 2020
-                        await increaseTimeTo(lockedUntil + duration.seconds(300));
+                        await increaseTimeTo(lockedUntil + duration.seconds(1000));
 
                         await this.token.transferFrom(founder, owner, initialBalance, {from: extraAccount}).should.be.fulfilled;
                     });
