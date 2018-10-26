@@ -20,6 +20,7 @@
   "license": "MIT",
   "homepage": "https://github.com/investxltd/inx-token-sale#readme",
   "dependencies": {
+    "bn.js": "^4.11.8",
     "openzeppelin-solidity": "1.12.0",
     "truffle-hdwallet-provider": "0.0.6"
   },
