@@ -1028,5 +1028,98 @@ contract.only('INXTokenSale', function ([owner, investor, wallet, purchaser, aut
                 await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized}).should.be.fulfilled;
             });
         });
+
+        describe('refund from owner', function () {
+            it('should return all wei', async function () {
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+
+                let tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+                let weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal(this.minContribution);
+
+                let post = await web3.eth.getBalance(unauthorized);
+
+                const {logs} = await this.crowdsale.sendRefund(unauthorized, {from: owner});
+
+                tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal('0');
+
+                weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal('0');
+
+                let postRefund = await web3.eth.getBalance(unauthorized);
+
+                // you have the exact amount back you put in
+                postRefund.sub(post).should.be.bignumber.equal(this.minContribution);
+
+                const event = logs.find(e => e.event === 'CommitmentRefund');
+                should.exist(event);
+                event.args.sender.should.equal(unauthorized);
+                event.args.value.should.be.bignumber.equal(this.minContribution);
+                event.args.amount.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+            });
+        });
+
+        describe('redeem commitment for INX token', function () {
+            it('revert if non-positive token balances', async function () {
+                await assertRevert(this.crowdsale.redeem(unauthorized, {from: unauthorized}));
+            });
+
+            it('revert if not KYC passed', async function () {
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+
+                await assertRevert(this.crowdsale.redeem(unauthorized, {from: unauthorized}));
+            });
+
+            it('revert if escrow is not whitelisted to mint tokens', async function () {
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+
+                await this.crowdsale.addToKyc(unauthorized, {from: owner});
+
+                await assert(this.crowdsale.redeem(unauthorized, {from: unauthorized}));
+            });
+
+            it('redeem for INX tokens', async function () {
+
+                // ensure the escrow contract can mint INX
+                await this.token.addAddressToWhitelist(this.crowdsale.address, {from: owner});
+
+                await this.crowdsale.addToKyc(unauthorized, {from: owner});
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+
+                let escrowTokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                escrowTokenBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+                let inxBalance = await this.token.balanceOf(unauthorized, {from: unauthorized});
+                inxBalance.should.be.bignumber.equal('0');
+
+                let walletBalancePreRedeem = await web3.eth.getBalance(wallet);
+
+                const {logs} = await this.crowdsale.redeem(unauthorized, {from: unauthorized});
+
+                let walletBalancePostRedeem = await web3.eth.getBalance(wallet);
+
+                // Investx's wallet of eth should have the value
+                walletBalancePostRedeem.minus(walletBalancePreRedeem).should.be.bignumber.equal(this.minContribution);
+
+                escrowTokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                escrowTokenBalance.should.be.bignumber.equal('0');
+
+                inxBalance = await this.token.balanceOf(unauthorized, {from: unauthorized});
+                inxBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+                const event = logs.find(e => e.event === 'CommitmentRedeem');
+                should.exist(event);
+                event.args.sender.should.equal(unauthorized);
+                event.args.value.should.be.bignumber.equal(this.minContribution);
+                event.args.amount.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+            });
+        });
     });
 });
