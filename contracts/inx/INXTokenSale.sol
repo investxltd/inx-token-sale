@@ -222,7 +222,7 @@ contract INXTokenSale is MintedKYCCrowdsale {
         delete weiBalances[_sender];
 
         require(tokenBalance > 0 && weiCommitted > 0, "Balances must be positive");
-        
+
         require(kyc[_sender], "Sender must have passed KYC");
 
         wallet.transfer(weiCommitted);
