@@ -3,6 +3,7 @@ const assertRevert = require('../helpers/assertRevert');
 const assertRevertMessage = require('../helpers/assertRevertMessage');
 const assertBN = require('../helpers/assertBN');
 const assertBNZero = require('../helpers/assertBNZero');
+const weiToEther = require('../helpers/weiToEther');
 
 const INXTokenEscrow = artifacts.require('INXTokenEscrow');
 const INXCrowdsale = artifacts.require('INXCrowdsale');
