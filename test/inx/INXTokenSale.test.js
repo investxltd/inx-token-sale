@@ -911,6 +911,120 @@ contract.only('INXTokenSale', function ([owner, investor, wallet, purchaser, aut
                 let contractPaused = await this.crowdsale.paused.call();
                 contractPaused.should.equal(false);
 
+                await this.crowdsale.commitToBuyTokens({
+                    value: this.minContribution,
+                    from: unauthorized
+                }).should.be.fulfilled;
+            });
+        });
+
+        describe('commitment via commitToBuyTokens', function () {
+
+            it('should log commitment', async function () {
+                const {logs} = await this.crowdsale.commitToBuyTokens({
+                    value: this.minContribution,
+                    from: unauthorized
+                });
+                const event = logs.find(e => e.event === 'TokenCommitment');
+                should.exist(event);
+                event.args.sender.should.equal(unauthorized);
+                event.args.value.should.be.bignumber.equal(this.minContribution);
+                event.args.rate.should.be.bignumber.equal(this.preSaleRate);
+                event.args.amount.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+            });
+
+            it('should assign tokens to sender', async function () {
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+                const tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+                const weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal(this.minContribution);
+
+                const contractWeiCommitted = await this.crowdsale.totalWeiCommitted();
+                contractWeiCommitted.should.be.bignumber.equal(this.minContribution);
+            });
+
+            it('should assign tokens to sender in public sale (with correct rate)', async function () {
+                // move to public sale
+                await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+                const tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal(this.rate.times(this.minContribution));
+
+                const weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal(this.minContribution);
+
+                const contractWeiCommitted = await this.crowdsale.totalWeiCommitted();
+                contractWeiCommitted.should.be.bignumber.equal(this.minContribution);
+            });
+
+            it('should assign tokens to sender in public sale (with correct rate)', async function () {
+                // move to public sale
+                await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+                const tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal(this.rate.times(this.minContribution));
+
+                const weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal(this.minContribution);
+
+                const contractWeiCommitted = await this.crowdsale.totalWeiCommitted();
+                contractWeiCommitted.should.be.bignumber.equal(this.minContribution);
+            });
+
+            it('should assign tokens to beneficiary in public sale and pre-sale (with correct rate)', async function () {
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+                const tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+                // move to public sale
+                await this.crowdsale.publicSale({from: owner}).should.be.fulfilled;
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+                const newTokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                const publicSaleTokens = this.rate.times(this.minContribution);
+                newTokenBalance.should.be.bignumber.equal(publicSaleTokens.add(tokenBalance));
+            });
+        });
+
+        // describe('commitment via default function', function () {
+        //
+        //     it('should log commitment', async function () {
+        //         const {logs} = await this.crowdsale.sendTransaction({value: this.minContribution, from: unauthorized});
+        //         const event = logs.find(e => e.event === 'TokenCommitment');
+        //         should.exist(event);
+        //         event.args.sender.should.equal(unauthorized);
+        //         event.args.value.should.be.bignumber.equal(this.minContribution);
+        //         event.args.rate.should.be.bignumber.equal(this.preSaleRate);
+        //         event.args.amount.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+        //     });
+        //
+        //     it('should assign tokens to beneficiary', async function () {
+        //         await this.crowdsale.sendTransaction({value: this.minContribution, from: unauthorized});
+        //         const tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+        //         tokenBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+        //
+        //         const weiBalance = await this.tokenEscrow.weiBalanceOf(unauthorized);
+        //         weiBalance.should.be.bignumber.equal(this.minContribution);
+        //
+        //         const contractWeiCommitted = await this.tokenEscrow.totalWeiCommitted();
+        //         contractWeiCommitted.should.be.bignumber.equal(this.minContribution);
+        //     });
+        // });
+
+        describe('sending minimum commitment', function () {
+            it('should fail if below limit', async function () {
+                // await assertRevert(this.crowdsale.sendTransaction({value: 1, from: recipient}));
+                await assertRevert(this.crowdsale.commitToBuyTokens({this: 1, from: unauthorized}));
+            });
+
+            it('should allow if exactly min limit', async function () {
+                // await this.tokenEscrow.sendTransaction({value: value, from: recipient}).should.be.fulfilled;
                 await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized}).should.be.fulfilled;
             });
         });
