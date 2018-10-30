@@ -186,13 +186,11 @@ contract INXTokenSale is MintedKYCCrowdsale {
         require(!paused, "INXCrowdsale is paused");
     }
 
-
-    // escrow
     /**
     * @dev Sends a full refund of wei and reset committed tokens to zero
     * @param _sender The address to query the the balance of.
     */
-    function sendRefund(address _sender) external onlyOwner returns (bool) {
+    function sendRefund(address _sender) external onlyInx returns (bool) {
         uint256 tokenBalance = tokenBalances[_sender];
         delete tokenBalances[_sender];
 

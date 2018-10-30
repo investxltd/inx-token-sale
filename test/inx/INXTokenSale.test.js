@@ -17,7 +17,7 @@ const should = require('chai')
 const INXTokenSale = artifacts.require('INXTokenSale');
 const INXToken = artifacts.require('INXToken');
 
-contract.only('INXTokenSale', function ([owner, investor, wallet, purchaser, authorized, unauthorized, anotherAuthorized, authorizedTwo, authorizedThree, authorizedFour, authorizedFive]) {
+contract('INXTokenSale', function ([owner, investor, wallet, purchaser, authorized, unauthorized, anotherAuthorized, authorizedTwo, authorizedThree, authorizedFour, authorizedFive]) {
 
     before(async function () {
         // Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
@@ -872,7 +872,7 @@ contract.only('INXTokenSale', function ([owner, investor, wallet, purchaser, aut
         });
     });
 
-    describe.only('Escrow of pre-kyc funds', function () {
+    describe('Escrow of pre-kyc funds', function () {
         describe('contract setup', function () {
             it('should have wei commitment value', async function () {
                 const contractWeiCommitted = await this.crowdsale.totalWeiCommitted();
@@ -992,6 +992,7 @@ contract.only('INXTokenSale', function ([owner, investor, wallet, purchaser, aut
             });
         });
 
+        // FIXME - decide on true default function
         // describe('commitment via default function', function () {
         //
         //     it('should log commitment', async function () {
