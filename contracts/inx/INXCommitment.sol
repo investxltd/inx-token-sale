@@ -7,7 +7,8 @@ import "./INXCrowdsale.sol";
 import "./INXToken.sol";
 
 /**
- * @title INXEscrow to be used to take contributions an lock in rates to be redeemed in the crowdsale
+ * @title INXCommitment used to capture commitments to the INX token sale from an individual address.
+ * Once KYC approved can redeem to INX Tokens.
  */
 contract INXCommitment is Pausable {
     using SafeMath for uint256;
@@ -64,7 +65,7 @@ contract INXCommitment is Pausable {
     }
 
     /**
-     * @dev fallback function ***DO NOT OVERRIDE***
+     * @dev fallback function
      */
     function() external payable {
         commit();
@@ -77,6 +78,7 @@ contract INXCommitment is Pausable {
         require(refunding, "Must be in refunding state");
 
         tokenBalance = 0;
+
         uint256 refundBalance = weiBalance;
         weiBalance = 0;
 
@@ -108,9 +110,9 @@ contract INXCommitment is Pausable {
         weiBalance = 0;
 
         address wallet = crowdsale.wallet();
-        wallet.transfer(weiBalance);
+        wallet.transfer(redeemBalance);
 
-        token.mint(sender, tokenBalance);
+        token.mint(sender, redeemTokenBalance);
 
         emit Redeem(
             sender,
@@ -122,7 +124,7 @@ contract INXCommitment is Pausable {
     }
 
     /**
-     * @dev captures a commitment to buy tokens at a fixed rate
+     * @dev captures a commitment to buy tokens at the current rate.
      */
     function commit() public payable whenNotPaused {
         require(!refunding, "Must not be in refunding state");
@@ -150,24 +152,36 @@ contract INXCommitment is Pausable {
         );
     }
 
+    /**
+     * @dev token balance of the associated sender
+     */
     function senderTokenBalance() public view returns (uint256) {
         return tokenBalance;
     }
 
+    /**
+     * @dev wei balance of the associated sender
+     */
     function senderWeiBalance() public view returns (uint256) {
         return weiBalance;
     }
 
+    /**
+     * @dev associated sender of this contract
+     */
     function senderAddress() public view returns (address) {
         return sender;
     }
 
+    /**
+     * @dev current state of refunding
+     */
     function isRefunding() public view returns (bool) {
         return refunding;
     }
 
     /**
-     * @dev Owner can toggle refunding state
+     * @dev Owner can toggle refunding state. Once in refunding anyone can trigger a refund of wei.
      */
     function toggleRefunding() external onlyOwner {
         refunding = !refunding;
