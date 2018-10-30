@@ -1030,9 +1030,12 @@ contract('INXTokenSale', function ([owner, investor, wallet, purchaser, authoriz
             });
         });
 
-        describe('refund from owner', function () {
-            it('should return all wei', async function () {
+        describe('refund from INX only', function () {
+            it('revert if not INX', async function () {
+                await assertRevert(this.crowdsale.sendRefund(unauthorized, {from: unauthorized}));
+            });
 
+            it('should refund all wei (invoked by owner)', async function () {
                 await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
 
                 let tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
@@ -1044,6 +1047,39 @@ contract('INXTokenSale', function ([owner, investor, wallet, purchaser, authoriz
                 let post = await web3.eth.getBalance(unauthorized);
 
                 const {logs} = await this.crowdsale.sendRefund(unauthorized, {from: owner});
+
+                tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal('0');
+
+                weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal('0');
+
+                let postRefund = await web3.eth.getBalance(unauthorized);
+
+                // you have the exact amount back you put in
+                postRefund.sub(post).should.be.bignumber.equal(this.minContribution);
+
+                const event = logs.find(e => e.event === 'CommitmentRefund');
+                should.exist(event);
+                event.args.sender.should.equal(unauthorized);
+                event.args.value.should.be.bignumber.equal(this.minContribution);
+                event.args.amount.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+            });
+
+            it('should refund all wei (invoked by inx)', async function () {
+                await this.crowdsale.addToInxWhitelist(authorized, {from: owner});
+
+                await this.crowdsale.commitToBuyTokens({value: this.minContribution, from: unauthorized});
+
+                let tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
+                tokenBalance.should.be.bignumber.equal(this.preSaleRate.times(this.minContribution));
+
+                let weiBalance = await this.crowdsale.weiBalanceOf(unauthorized);
+                weiBalance.should.be.bignumber.equal(this.minContribution);
+
+                let post = await web3.eth.getBalance(unauthorized);
+
+                const {logs} = await this.crowdsale.sendRefund(unauthorized, {from: authorized});
 
                 tokenBalance = await this.crowdsale.tokenBalanceOf(unauthorized);
                 tokenBalance.should.be.bignumber.equal('0');
@@ -1086,7 +1122,6 @@ contract('INXTokenSale', function ([owner, investor, wallet, purchaser, authoriz
             });
 
             it('redeem for INX tokens', async function () {
-
                 // ensure the escrow contract can mint INX
                 await this.token.addAddressToWhitelist(this.crowdsale.address, {from: owner});
 
