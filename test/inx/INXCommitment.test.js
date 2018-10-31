@@ -209,4 +209,56 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
             event.args.amount.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
         });
     });
+
+    describe('refund', function () {
+
+        it('should revert if paused', async function () {
+            await this.commitment.pause({from: owner});
+
+            const paused = await this.commitment.paused();
+            paused.should.be.equal(true);
+
+            await assertRevert(this.commitment.refund({from: investor}));
+        });
+
+        it('should revert if not in refunding state', async function () {
+
+            let refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(false);
+
+            await assertRevert(this.commitment.refund({from: investor}));
+        });
+
+        it('should refund commitment', async function () {
+            // commit min contribution
+            await this.commitment.commit({value: this.minContribution, from: investor});
+
+            await this.commitment.toggleRefunding({from: owner});
+
+            let refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(true);
+
+            const pre = web3.eth.getBalance(investor);
+
+            // refund triggered by owner
+            const {logs} = await this.commitment.refund({from: owner});
+
+            const post = web3.eth.getBalance(investor);
+
+            // should have a balance increased by original committed value
+            // that is the min contribution
+            post.minus(pre).should.be.bignumber.equal(this.minContribution);
+
+            const senderTokenBalance = await this.commitment.senderTokenBalance();
+            senderTokenBalance.should.be.bignumber.equal(0);
+
+            const senderWeiBalance = await this.commitment.senderWeiBalance();
+            senderWeiBalance.should.be.bignumber.equal('0');
+
+            const event = logs.find(e => e.event === 'Refund');
+            should.exist(event);
+            event.args.sender.should.equal(investor);
+            event.args.value.should.be.bignumber.equal(this.minContribution);
+        });
+    });
 });
