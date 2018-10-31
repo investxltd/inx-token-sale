@@ -12,7 +12,7 @@ const INXCrowdsale = artifacts.require('INXCrowdsale');
 const INXToken = artifacts.require('INXToken');
 const INXCommitment = artifacts.require('INXCommitment');
 
-contract('INXCommitment', function ([owner, investor, wallet, unauthorized]) {
+contract('INXCommitment', function ([investor, owner, wallet, unauthorized]) {
 
     beforeEach(async function () {
         const token = await INXToken.new({from: owner});
@@ -29,7 +29,7 @@ contract('INXCommitment', function ([owner, investor, wallet, unauthorized]) {
         this.standardExpectedPreSaleRateTokenAmount = this.preSaleRate.mul(this.minContribution);
 
         // ensure the crowdsale can transfer tokens - whitelist in token
-        await token.addAddressToWhitelist(crowdsale.address);
+        await token.addAddressToWhitelist(crowdsale.address, {from: owner});
 
         this.inxTokenSale = crowdsale;
         this.inxToken = token;
@@ -197,6 +197,23 @@ contract('INXCommitment', function ([owner, investor, wallet, unauthorized]) {
 
         it('should make min contribution commitment', async function () {
             const {logs} = await this.commitment.commit({value: this.minContribution, from: investor});
+
+            const senderWeiBalance = await this.commitment.senderWeiBalance();
+            senderWeiBalance.should.be.bignumber.equal(this.minContribution);
+
+            const senderTokenBalance = await this.commitment.senderTokenBalance();
+            senderTokenBalance.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
+
+            const event = logs.find(e => e.event === 'Commit');
+            should.exist(event);
+            event.args.sender.should.equal(investor);
+            event.args.value.should.be.bignumber.equal(this.minContribution);
+            event.args.rate.should.be.bignumber.equal(this.preSaleRate);
+            event.args.amount.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
+        });
+
+        it('should make min contribution commitment via default function', async function () {
+            const {logs} = await this.commitment.send(this.minContribution);
 
             const senderWeiBalance = await this.commitment.senderWeiBalance();
             senderWeiBalance.should.be.bignumber.equal(this.minContribution);

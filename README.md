@@ -73,7 +73,7 @@ npm run test
   
 #### Code Coverage Snapshot
 
-![](./snapshots/code_report.png)  
+![](./snapshots/report.png)  
  
 ### Code Linting
  
