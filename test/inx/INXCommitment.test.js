@@ -1,12 +1,6 @@
 const etherToWei = require('../helpers/etherToWei');
 const assertRevert = require('../helpers/assertRevert');
 
-const advanceBlock = require('../helpers/advanceToBlock');
-const increaseTimeTo = require('../helpers/increaseTime').increaseTimeTo;
-const duration = require('../helpers/increaseTime').duration;
-const latestTime = require('../helpers/latestTime');
-const EVMRevert = require('../helpers/EVMRevert');
-
 const BigNumber = web3.BigNumber;
 
 const should = require('chai')
@@ -23,7 +17,7 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
     beforeEach(async function () {
         const token = await INXToken.new({from: owner});
 
-        const crowdsale = await INXCrowdsale.new(wallet, token.address, 1, 2, {from: owner});
+        const crowdsale = await INXCrowdsale.new(wallet, token.address, 200, 400, {from: owner});
 
         this.commitment = await INXCommitment.new(investor, crowdsale.address, token.address, {from: owner});
 
@@ -31,8 +25,8 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
         this.preSaleRate = await crowdsale.preSaleRate();
         this.minContribution = await crowdsale.minContribution(); // 0.2 ETH
 
-        // this.standardExpectedTokenAmount = this.rate.mul(this.value);
-        // this.standardExpectedPreSaleRateTokenAmount = this.preSaleRate.mul(this.value);
+        this.standardExpectedTokenAmount = this.rate.mul(this.minContribution);
+        this.standardExpectedPreSaleRateTokenAmount = this.preSaleRate.mul(this.minContribution);
 
         // ensure the crowdsale can transfer tokens - whitelist in token
         await token.addAddressToWhitelist(crowdsale.address);
@@ -150,7 +144,7 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
         });
     });
 
-    describe('commit', function () {
+    describe('refunding state', function () {
 
         it('should revert if not owner', async function () {
             await assertRevert(this.commitment.toggleRefunding({from: unauthorized}));
@@ -166,6 +160,53 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
 
             refunding = await this.commitment.isRefunding();
             refunding.should.be.equal(false);
+        });
+    });
+
+    describe('commit', function () {
+
+        it('should revert if paused', async function () {
+            await this.commitment.pause({from: owner});
+
+            const paused = await this.commitment.paused();
+            paused.should.be.equal(true);
+
+            await assertRevert(this.commitment.commit({value: this.minContribution, from: investor}));
+        });
+
+        it('should revert if not sender', async function () {
+            await assertRevert(this.commitment.commit({value: this.minContribution, from: unauthorized}));
+        });
+
+        it('should revert if in refunding state', async function () {
+
+            await this.commitment.toggleRefunding({from: owner});
+
+            let refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(true);
+
+            await assertRevert(this.commitment.commit({value: this.minContribution, from: investor}));
+        });
+
+        it('should revert if under min contribution', async function () {
+            await assertRevert(this.commitment.commit({value: 1, from: investor}));
+        });
+
+        it('should make min contribution commitment', async function () {
+            const {logs} = await this.commitment.commit({value: this.minContribution, from: investor});
+
+            const senderWeiBalance = await this.commitment.senderWeiBalance();
+            senderWeiBalance.should.be.bignumber.equal(this.minContribution);
+
+            const senderTokenBalance = await this.commitment.senderTokenBalance();
+            senderTokenBalance.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
+
+            const event = logs.find(e => e.event === 'Commit');
+            should.exist(event);
+            event.args.sender.should.equal(investor);
+            event.args.value.should.be.bignumber.equal(this.minContribution);
+            event.args.rate.should.be.bignumber.equal(this.preSaleRate);
+            event.args.amount.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
         });
     });
 });

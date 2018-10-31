@@ -138,7 +138,6 @@ contract INXCommitment is Pausable {
 
         // calculate token amount to be committed
         uint256 tokens = weiAmount.mul(rate);
-
         tokenBalance = tokenBalance.add(tokens);
 
         emit Commit(
