@@ -83,7 +83,6 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
     });
 
     describe('pause', function () {
-
         describe('when the contract is unpaused', function () {
             it('pauses the token', async function () {
                 await this.commitment.pause({from: owner});
@@ -117,45 +116,39 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
         });
     });
 
-    // describe('unpause', function () {
-    //     describe('when the sender is the token owner', function () {
-    //         const from = owner;
-    //
-    //         describe('when the token is paused', function () {
-    //             beforeEach(async function () {
-    //                 await this.crowdsale.pause({from});
-    //             });
-    //
-    //             it('unpauses the token', async function () {
-    //                 await this.crowdsale.unpause({from});
-    //
-    //                 const paused = await this.crowdsale.paused();
-    //                 assert.equal(paused, false);
-    //             });
-    //
-    //             it('emits an unpaused event', async function () {
-    //                 const {logs} = await this.crowdsale.unpause({from});
-    //
-    //                 assert.equal(logs.length, 1);
-    //                 assert.equal(logs[0].event, 'Unpause');
-    //             });
-    //         });
-    //
-    //         describe('when the token is unpaused', function () {
-    //             it('reverts', async function () {
-    //                 await assertRevert(this.crowdsale.unpause({from}));
-    //             });
-    //         });
-    //     });
-    //
-    //     describe('when the sender is not the token owner', function () {
-    //         const from = investor;
-    //
-    //         it('reverts', async function () {
-    //             await assertRevert(this.crowdsale.unpause({from}));
-    //         });
-    //     });
-    // });
+    describe('unpause', function () {
+        describe('when the token is paused', function () {
+            beforeEach(async function () {
+                await this.crowdsale.pause({from: owner});
+            });
+
+            it('unpauses the token', async function () {
+                await this.crowdsale.unpause({from: owner});
+
+                const paused = await this.crowdsale.paused();
+                paused.should.be.equal(false);
+            });
+
+            it('emits an unpaused event', async function () {
+                const {logs} = await this.crowdsale.unpause({from: owner});
+
+                assert.equal(logs.length, 1);
+                assert.equal(logs[0].event, 'Unpause');
+            });
+        });
+
+        describe('when the token is unpaused', function () {
+            it('reverts', async function () {
+                await assertRevert(this.crowdsale.unpause({from: owner}));
+            });
+        });
+
+        describe('when the sender is not the token owner', function () {
+            it('reverts', async function () {
+                await assertRevert(this.crowdsale.unpause({from: unauthorized}));
+            });
+        });
+    });
 
     describe('commit', function () {
 
