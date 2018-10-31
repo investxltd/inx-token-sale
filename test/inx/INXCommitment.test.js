@@ -30,6 +30,9 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
 
         // ensure the crowdsale can transfer tokens - whitelist in token
         await token.addAddressToWhitelist(crowdsale.address);
+
+        this.inxTokenSale = crowdsale;
+        this.inxToken = token;
     });
 
     after(async function () {});
@@ -259,6 +262,82 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
             should.exist(event);
             event.args.sender.should.equal(investor);
             event.args.value.should.be.bignumber.equal(this.minContribution);
+        });
+    });
+
+    describe('redeem', function () {
+
+        it('should revert if paused', async function () {
+            await this.commitment.pause({from: owner});
+
+            const paused = await this.commitment.paused();
+            paused.should.be.equal(true);
+
+            await assertRevert(this.commitment.redeem({from: investor}));
+        });
+
+        it('should revert if in refunding state', async function () {
+
+            await this.commitment.toggleRefunding({from: owner});
+
+            let refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(true);
+
+            await assertRevert(this.commitment.redeem({from: investor}));
+        });
+
+        it('should revert if zero balances', async function () {
+
+            const senderTokenBalance = await this.commitment.senderTokenBalance();
+            senderTokenBalance.should.be.bignumber.equal('0');
+
+            const senderWeiBalance = await this.commitment.senderWeiBalance();
+            senderWeiBalance.should.be.bignumber.equal('0');
+
+            await assertRevert(this.commitment.redeem({from: investor}));
+        });
+
+        it('should revert if no KYC', async function () {
+            const {logs} = await this.commitment.commit({value: this.minContribution, from: investor});
+
+            await assertRevert(this.commitment.redeem({from: investor}));
+        });
+
+        it('should redeem commitment', async function () {
+            // ensure the commitment contract can mint INX
+            await this.inxToken.addAddressToWhitelist(this.commitment.address, {from: owner});
+
+            // commit min contribution
+            await this.commitment.commit({value: this.minContribution, from: investor});
+
+            // add investor to kyc in token sale
+            await this.inxTokenSale.addToKyc(investor, {from: owner});
+
+            let inxBalance = await this.inxToken.balanceOf(investor, {from: investor});
+            inxBalance.should.be.bignumber.equal('0');
+
+            const preWalletBalance = web3.eth.getBalance(wallet);
+
+            // refund triggered by owner
+            const {logs} = await this.commitment.redeem({from: investor});
+
+            const postWalletBalance = web3.eth.getBalance(wallet);
+
+            postWalletBalance.minus(preWalletBalance).should.be.bignumber.equal(this.minContribution);
+
+            const senderTokenBalance = await this.commitment.senderTokenBalance();
+            senderTokenBalance.should.be.bignumber.equal(0);
+
+            const senderWeiBalance = await this.commitment.senderWeiBalance();
+            senderWeiBalance.should.be.bignumber.equal('0');
+
+            inxBalance = await this.inxToken.balanceOf(investor, {from: investor});
+            inxBalance.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
+
+            const event = logs.find(e => e.event === 'Redeem');
+            should.exist(event);
+            event.args.sender.should.equal(investor);
+            // FIXME add extra args
         });
     });
 });
