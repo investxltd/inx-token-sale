@@ -337,7 +337,8 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
             const event = logs.find(e => e.event === 'Redeem');
             should.exist(event);
             event.args.sender.should.equal(investor);
-            // FIXME add extra args
+            event.args.value.should.be.bignumber.equal(this.minContribution);
+            event.args.amount.should.be.bignumber.equal(this.standardExpectedPreSaleRateTokenAmount);
         });
     });
 });
