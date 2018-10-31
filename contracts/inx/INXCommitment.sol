@@ -96,7 +96,6 @@ contract INXCommitment is Pausable {
     function redeem() external whenNotPaused returns (bool) {
         require(!refunding, "Must not be in refunding state");
 
-        require(address(this).balance > 0, "Token balance must be positive");
         require(tokenBalance > 0, "Token balance must be positive");
 
         bool kyc = crowdsale.kyc(sender);
