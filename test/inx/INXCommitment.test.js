@@ -63,4 +63,22 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
         });
     });
 
+    describe('refuding can be toggled by owner', function () {
+
+        it('should revert if not owner', async function () {
+            await assertRevert(this.commitment.toggleRefunding({from: unauthorized}));
+        });
+
+        it('should fulfill if owner', async function () {
+            await this.commitment.toggleRefunding({from: owner});
+
+            let refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(true);
+
+            await this.commitment.toggleRefunding({from: owner});
+
+            refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(false);
+        });
+    });
 });
