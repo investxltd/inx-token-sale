@@ -21,21 +21,21 @@ const INXCommitment = artifacts.require('INXCommitment');
 contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]) {
 
     beforeEach(async function () {
-        this.token = await INXToken.new({from: owner});
+        const token = await INXToken.new({from: owner});
 
-        this.crowdsale = await INXCrowdsale.new(wallet, this.token.address, 1, 2, {from: owner});
+        const crowdsale = await INXCrowdsale.new(wallet, token.address, 1, 2, {from: owner});
 
-        this.commitment = await INXCommitment.new(investor, this.crowdsale.address, this.token.address, {from: owner});
+        this.commitment = await INXCommitment.new(investor, crowdsale.address, token.address, {from: owner});
 
-        this.rate = await this.crowdsale.rate();
-        this.preSaleRate = await this.crowdsale.preSaleRate();
-        this.minContribution = await this.crowdsale.minContribution(); // 0.2 ETH
+        this.rate = await crowdsale.rate();
+        this.preSaleRate = await crowdsale.preSaleRate();
+        this.minContribution = await crowdsale.minContribution(); // 0.2 ETH
 
         // this.standardExpectedTokenAmount = this.rate.mul(this.value);
         // this.standardExpectedPreSaleRateTokenAmount = this.preSaleRate.mul(this.value);
 
         // ensure the crowdsale can transfer tokens - whitelist in token
-        await this.token.addAddressToWhitelist(this.crowdsale.address);
+        await token.addAddressToWhitelist(crowdsale.address);
     });
 
     after(async function () {});
@@ -119,18 +119,18 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
     describe('unpause', function () {
         describe('when the token is paused', function () {
             beforeEach(async function () {
-                await this.crowdsale.pause({from: owner});
+                await this.commitment.pause({from: owner});
             });
 
             it('unpauses the token', async function () {
-                await this.crowdsale.unpause({from: owner});
+                await this.commitment.unpause({from: owner});
 
-                const paused = await this.crowdsale.paused();
+                const paused = await this.commitment.paused();
                 paused.should.be.equal(false);
             });
 
             it('emits an unpaused event', async function () {
-                const {logs} = await this.crowdsale.unpause({from: owner});
+                const {logs} = await this.commitment.unpause({from: owner});
 
                 assert.equal(logs.length, 1);
                 assert.equal(logs[0].event, 'Unpause');
@@ -139,13 +139,13 @@ contract.only('INXCommitment', function ([owner, investor, wallet, unauthorized]
 
         describe('when the token is unpaused', function () {
             it('reverts', async function () {
-                await assertRevert(this.crowdsale.unpause({from: owner}));
+                await assertRevert(this.commitment.unpause({from: owner}));
             });
         });
 
         describe('when the sender is not the token owner', function () {
             it('reverts', async function () {
-                await assertRevert(this.crowdsale.unpause({from: unauthorized}));
+                await assertRevert(this.commitment.unpause({from: unauthorized}));
             });
         });
     });
