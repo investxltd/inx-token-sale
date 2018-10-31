@@ -14,8 +14,8 @@ contract INXCommitment is Pausable {
     using SafeMath for uint256;
 
     address internal sender;
+
     uint256 internal tokenBalance;
-    uint256 internal weiBalance;
 
     bool internal refunding = false;
 
@@ -79,14 +79,12 @@ contract INXCommitment is Pausable {
 
         tokenBalance = 0;
 
-        uint256 refundBalance = weiBalance;
-        weiBalance = 0;
-
-        sender.transfer(refundBalance);
+        uint256 refundWeiBalance = address(this).balance;
+        sender.transfer(refundWeiBalance);
 
         emit Refund(
             sender,
-            refundBalance
+            refundWeiBalance
         );
 
         return true;
@@ -98,25 +96,25 @@ contract INXCommitment is Pausable {
     function redeem() external whenNotPaused returns (bool) {
         require(!refunding, "Must not be in refunding state");
 
-        require(tokenBalance > 0 && weiBalance > 0, "Balances must be positive");
+        require(address(this).balance > 0, "Token balance must be positive");
+        require(tokenBalance > 0, "Token balance must be positive");
 
         bool kyc = crowdsale.kyc(sender);
         require(kyc, "Sender must have passed KYC");
 
-        uint256 redeemTokenBalance = weiBalance;
+        uint256 redeemTokenBalance = tokenBalance;
         tokenBalance = 0;
 
-        uint256 redeemBalance = weiBalance;
-        weiBalance = 0;
+        uint256 redeemWeiBalance = address(this).balance;
 
         address wallet = crowdsale.wallet();
-        wallet.transfer(redeemBalance);
+        wallet.transfer(redeemWeiBalance);
 
         token.mint(sender, redeemTokenBalance);
 
         emit Redeem(
             sender,
-            redeemBalance,
+            redeemWeiBalance,
             redeemTokenBalance
         );
 
@@ -128,11 +126,11 @@ contract INXCommitment is Pausable {
      */
     function commit() public payable whenNotPaused {
         require(!refunding, "Must not be in refunding state");
-
         require(sender == msg.sender, "Can only commit from the predefined sender address");
 
         uint256 weiAmount = msg.value;
         uint256 minContribution = crowdsale.minContribution();
+
         require(weiAmount >= minContribution, "Commitment value below minimum");
 
         // pull the current rate from the crowdsale
@@ -142,7 +140,6 @@ contract INXCommitment is Pausable {
         uint256 tokens = weiAmount.mul(rate);
 
         tokenBalance = tokenBalance.add(tokens);
-        weiBalance = weiBalance.add(weiAmount);
 
         emit Commit(
             sender,
@@ -163,7 +160,7 @@ contract INXCommitment is Pausable {
      * @dev wei balance of the associated sender
      */
     function senderWeiBalance() public view returns (uint256) {
-        return weiBalance;
+        return address(this).balance;
     }
 
     /**
