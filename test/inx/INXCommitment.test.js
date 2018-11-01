@@ -12,7 +12,7 @@ const INXCrowdsale = artifacts.require('INXCrowdsale');
 const INXToken = artifacts.require('INXToken');
 const INXCommitment = artifacts.require('INXCommitment');
 
-contract('INXCommitment', function ([investor, owner, wallet, unauthorized]) {
+contract.only('INXCommitment', function ([investor, owner, wallet, unauthorized]) {
 
     beforeEach(async function () {
         const token = await INXToken.new({from: owner});

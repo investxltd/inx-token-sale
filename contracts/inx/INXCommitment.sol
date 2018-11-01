@@ -3,8 +3,22 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
-import "./INXCrowdsale.sol";
-import "./INXToken.sol";
+/**
+* Minimal interface definition for an INX Crowdsale
+*/
+interface ICrowdsale {
+    function kyc(address _address) returns (bool);
+    function wallet() returns (address);
+    function minContribution() returns (uint256);
+    function getCurrentRate() returns (uint256);
+}
+
+/**
+* Minimal interface definition for an INX Crowdsale
+*/
+interface IToken {
+    function mint(address _to, uint256 _amount) returns (bool);
+}
 
 /**
  * @title INXCommitment used to capture commitments to the INX token sale from an individual address.
@@ -19,8 +33,8 @@ contract INXCommitment is Pausable {
 
     bool internal refunding = false;
 
-    INXCrowdsale internal crowdsale;
-    INXToken internal token;
+    ICrowdsale internal crowdsale;
+    IToken internal token;
 
     /**
      * Event for token commitment logging
@@ -58,7 +72,7 @@ contract INXCommitment is Pausable {
         uint256 amount
     );
 
-    constructor(address _sender, INXCrowdsale _crowdsale, INXToken _token) public  {
+    constructor(address _sender, ICrowdsale _crowdsale, IToken _token) public  {
         sender = _sender;
         crowdsale = _crowdsale;
         token = _token;
