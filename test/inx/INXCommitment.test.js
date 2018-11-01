@@ -254,6 +254,15 @@ contract.only('INXCommitment', function ([investor, owner, wallet, unauthorized]
             await assertRevert(this.commitment.refund({from: investor}));
         });
 
+        it('should revert if zero token balance', async function () {
+            await this.commitment.toggleRefunding({from: owner});
+
+            let refunding = await this.commitment.isRefunding();
+            refunding.should.be.equal(true);
+
+            await assertRevert(this.commitment.refund({from: investor}));
+        });
+
         it('should refund commitment', async function () {
             // commit min contribution
             await this.commitment.commit({value: this.minContribution, from: investor});

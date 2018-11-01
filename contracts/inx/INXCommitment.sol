@@ -98,6 +98,8 @@ contract INXCommitment is Pausable {
     function refund() external whenNotPaused returns (bool) {
         require(refunding, "Must be in refunding state");
 
+        require(tokenBalance > 0, "Token balance must be positive");
+
         tokenBalance = 0;
 
         uint256 refundWeiBalance = address(this).balance;
