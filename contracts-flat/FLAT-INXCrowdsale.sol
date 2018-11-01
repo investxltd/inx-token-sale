@@ -980,7 +980,7 @@ contract INXCrowdsale is MintedKYCCrowdsale {
   mapping(address => uint256) public contributions;
 
   // FIXME arbitrarily set
-  uint256 public openingTime = block.timestamp.add(30 minutes);
+  uint256 public openingTime = block.timestamp.add(60 minutes);
 
   // FIXME arbitrarily set
   uint256 public closingTime = openingTime.add(8 days);
@@ -1052,6 +1052,17 @@ contract INXCrowdsale is MintedKYCCrowdsale {
     require(inPreSale, "Must be in pre-sale to start public sale");
 
     inPreSale = false;
+  }
+
+  /**
+   * @dev returns the current rate of the crowdsale
+   */
+  function getCurrentRate() public view returns (uint256) {
+    if (inPreSale) {
+      return preSaleRate;
+    }
+
+    return rate;
   }
 
   /**
