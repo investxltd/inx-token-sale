@@ -146,7 +146,7 @@ contract INXCommitment is Pausable {
     /**
      * @dev captures a commitment to buy tokens at the current rate.
      */
-    function commit() public payable whenNotPaused {
+    function commit() public payable whenNotPaused returns (bool) {
         require(!refunding, "Must not be in refunding state");
         require(sender == msg.sender, "Can only commit from the predefined sender address");
 
@@ -168,6 +168,8 @@ contract INXCommitment is Pausable {
             rate,
             tokens
         );
+
+        return true;
     }
 
     /**
