@@ -34,6 +34,21 @@ Contracts are
   * The crowdsale has a `paused` flag which can stop any more contributors from participating. This flag can be reversed to enable the token sale again.
   * Manages a `inxWhitelist` of approved accounts that can add and remove accounts from the `kyc` address list
 
+### INX Commitment Smart Contract
+
+* Smart contract responsible for processing capturing commitments in Ether and assigning token balances based on the rate at that time (from the crowdsale)
+* The **INXCommitment** has the following properties
+  * Uses the **INXCrowdsale** contract to discover rates, min. contribution, main invest wallet, and KYC status of the `sender`
+  * Ability to specify `sender`
+    * This is the only ETH account that can commit ether to the contract
+  * `commit`
+    * Allows commitments of ETH and assigns the relevant amount to INX tokens (to be redeemed once KYC passed)
+  * `redeem`
+    * Once KYC passed, the commitment can be redeemed for minted INX Tokens from the  **INXToken** contract
+  * `refund`
+    * If the `refunding` state is `true`, refunds to the `sender` can be triggered
+
+
 ## Deployment
 
 _see `migrations` folder for a more details_
