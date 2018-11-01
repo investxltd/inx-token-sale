@@ -67,7 +67,12 @@ contract.only('INXCommitment', function ([investor, owner, wallet, unauthorized]
         });
 
         it('should fulfill if owner', async function () {
-            await this.commitment.toggleRefunding({from: owner});
+            const {logs} = await this.commitment.toggleRefunding({from: owner});
+
+            // ensure event is emitted
+            const event = logs.find(e => e.event === 'RefundToggle');
+            should.exist(event);
+            event.args.newValue.should.equal(true);
 
             let refunding = await this.commitment.isRefunding();
             refunding.should.be.equal(true);

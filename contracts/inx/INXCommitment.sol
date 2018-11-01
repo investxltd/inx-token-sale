@@ -61,6 +61,13 @@ contract INXCommitment is Pausable {
     );
 
     /**
+     * Event for refund toggle
+     */
+    event RefundToggle(
+        bool newValue
+    );
+
+    /**
      * Event for successful redemption of a commitment
      * @param sender who paid for the tokens
      * @param value weis refunded
@@ -123,7 +130,7 @@ contract INXCommitment is Pausable {
         address wallet = crowdsale.wallet();
         wallet.transfer(redeemWeiBalance);
 
-        token.mint(sender, redeemTokenBalance);
+        require(token.mint(sender, redeemTokenBalance), "Unable to mint INX tokens");
 
         emit Redeem(
             sender,
@@ -194,5 +201,7 @@ contract INXCommitment is Pausable {
      */
     function toggleRefunding() external onlyOwner {
         refunding = !refunding;
+
+        emit RefundToggle(refunding);
     }
 }
