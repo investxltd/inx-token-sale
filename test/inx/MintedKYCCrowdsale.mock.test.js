@@ -7,9 +7,9 @@ const duration = require('../helpers/increaseTime').duration;
 const BigNumber = web3.BigNumber;
 
 const should = require('chai')
-  .use(require('chai-as-promised'))
-  .use(require('chai-bignumber')(BigNumber))
-  .should();
+    .use(require('chai-as-promised'))
+    .use(require('chai-bignumber')(BigNumber))
+    .should();
 
 const INXCrowdsale = artifacts.require('INXCrowdsale');
 const MockWhitelistedMintableToken = artifacts.require('MockWhitelistedMintableToken');
