@@ -168,17 +168,17 @@ contract Pausable is Ownable {
 * Minimal interface definition for an INX Crowdsale
 */
 interface ICrowdsale {
-    function kyc(address _address) returns (bool);
-    function wallet() returns (address);
-    function minContribution() returns (uint256);
-    function getCurrentRate() returns (uint256);
+    function kyc(address _address) public returns (bool);
+    function wallet() public returns (address);
+    function minContribution() public returns (uint256);
+    function getCurrentRate() public returns (uint256);
 }
 
 /**
 * Minimal interface definition for an INX Crowdsale
 */
 interface IToken {
-    function mint(address _to, uint256 _amount) returns (bool);
+    function mint(address _to, uint256 _amount) public returns (bool);
 }
 
 /**
@@ -219,6 +219,13 @@ contract INXCommitment is Pausable {
     event Refund(
         address indexed sender,
         uint256 value
+    );
+
+    /**
+     * Event for refund toggle
+     */
+    event RefundToggle(
+        bool newValue
     );
 
     /**
@@ -284,7 +291,7 @@ contract INXCommitment is Pausable {
         address wallet = crowdsale.wallet();
         wallet.transfer(redeemWeiBalance);
 
-        token.mint(sender, redeemTokenBalance);
+        require(token.mint(sender, redeemTokenBalance), "Unable to mint INX tokens");
 
         emit Redeem(
             sender,
@@ -355,5 +362,7 @@ contract INXCommitment is Pausable {
      */
     function toggleRefunding() external onlyOwner {
         refunding = !refunding;
+
+        emit RefundToggle(refunding);
     }
 }

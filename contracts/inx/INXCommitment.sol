@@ -14,7 +14,7 @@ interface ICrowdsale {
 }
 
 /**
-* Minimal interface definition for an INX Crowdsale
+* Minimal interface definition for an INX Token
 */
 interface IToken {
     function mint(address _to, uint256 _amount) public returns (bool);
