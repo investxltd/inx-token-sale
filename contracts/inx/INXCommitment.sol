@@ -7,17 +7,17 @@ import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 * Minimal interface definition for an INX Crowdsale
 */
 interface ICrowdsale {
-    function kyc(address _address) public returns (bool);
-    function wallet() public returns (address);
-    function minContribution() public returns (uint256);
-    function getCurrentRate() public returns (uint256);
+    function kyc(address _address) external returns (bool);
+    function wallet() external returns (address);
+    function minContribution() external returns (uint256);
+    function getCurrentRate() external returns (uint256);
 }
 
 /**
 * Minimal interface definition for an INX Token
 */
 interface IToken {
-    function mint(address _to, uint256 _amount) public returns (bool);
+    function mint(address _to, uint256 _amount) external returns (bool);
 }
 
 /**
