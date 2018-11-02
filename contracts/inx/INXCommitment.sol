@@ -194,6 +194,22 @@ contract INXCommitment is Pausable {
     }
 
     /**
+     * @dev associated INXCrowdsale
+     */
+    function inxCrowdsale() public view returns (address) {
+        return crowdsale;
+    }
+
+
+    /**
+     * @dev associated INXToken
+     */
+    function inxToken() public view returns (address) {
+        return token;
+    }
+
+
+    /**
      * @dev current state of refunding
      */
     function isRefunding() public view returns (bool) {
