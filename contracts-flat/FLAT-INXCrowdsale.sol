@@ -979,14 +979,14 @@ contract INXCrowdsale is MintedKYCCrowdsale {
 
   mapping(address => uint256) public contributions;
 
-  // FIXME arbitrarily set
-  uint256 public openingTime = block.timestamp.add(60 minutes);
+  // Thursday, 01-Nov-18 14:00:00 UTC
+  uint256 public openingTime = 1541080800;
 
-  // FIXME arbitrarily set
-  uint256 public closingTime = openingTime.add(8 days);
+  // Thursday, 28-Feb-19 14:00:00 UTC
+  uint256 public closingTime = 1551362400;
 
   // minimum contribution in wei - this can change
-  uint256 public minContribution = 0.2 ether;
+  uint256 public minContribution = 5 ether;
 
   // if true, then we are in the pre-sale phase
   bool public inPreSale = true;
